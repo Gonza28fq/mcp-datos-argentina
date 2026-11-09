@@ -37,6 +37,13 @@ const casos = [
   ["consultar_series", { ids: ["148.3_INIVELNAL_DICI_M_26"], transformacion: "variacion_interanual_pct", ultimos: 3 }],
   ["consultar_series", { ids: ["148.3_INIVELNAL_DICI_M_26"], frecuencia: "year", ultimos: 3 }],
   ["consultar_series", { ids: ["NO_EXISTE_123"] }],
+  // Mercado
+  ["riesgo_pais", {}],
+  ["riesgo_pais", { desde: "2026-01-01" }],
+  ["plazos_fijos", { monto: 1000000, limite: 5 }],
+  ["plazos_fijos", { cliente: false, limite: 3 }],
+  ["plazos_fijos", { dias: 365, monto: 1000000, limite: 3 }],
+  ["plazos_fijos", { dias: 47 }],
 ];
 
 let fallos = 0;

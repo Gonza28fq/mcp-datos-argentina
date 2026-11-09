@@ -1,7 +1,7 @@
 {
   "name": "mcp-datos-argentina",
-  "version": "0.2.0",
-  "description": "Servidor MCP con datos públicos de Argentina: BCRA (variables, cotizaciones, Central de Deudores), dólar, inflación, feriados, Georef y series de tiempo oficiales.",
+  "version": "0.3.0",
+  "description": "Servidor MCP con datos públicos de Argentina: BCRA (variables, cotizaciones, Central de Deudores), dólar, riesgo país, plazos fijos, inflación, feriados, Georef y series de tiempo oficiales.",
   "type": "module",
   "bin": {
     "mcp-datos-argentina": "dist/index.js"
@@ -24,6 +24,8 @@
     "bcra",
     "dolar",
     "inflacion",
+    "plazo-fijo",
+    "riesgo-pais",
     "georef",
     "indec",
     "datos-abiertos",

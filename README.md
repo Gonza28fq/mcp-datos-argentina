@@ -16,6 +16,8 @@ Servidor [MCP](https://modelcontextprotocol.io) que le da a Claude (o cualquier 
 | `feriados` | Feriados nacionales del año (o solo los próximos) | argentinadatos.com |
 | `inflacion` | IPC mensual y acumulada en un rango | argentinadatos.com |
 | `ajustar_por_inflacion` | Lleva un monto de un mes a otro por IPC (hacia adelante o atrás) | argentinadatos.com |
+| `riesgo_pais` | Último valor, variación diaria y del período, mínimo/máximo; historia desde 1999 | argentinadatos.com |
+| `plazos_fijos` | Ranking de tasas por banco/billetera para un plazo y monto: TNA, TEA, interés y tasa real vs. inflación | argentinadatos.com |
 | `normalizar_direccion` | Normaliza y geolocaliza una dirección; si no hay altura, sugiere la calle | Georef (datos.gob.ar) |
 | `normalizar_direcciones_lote` | Hasta 500 direcciones en una llamada, con % de éxito | Georef (datos.gob.ar) |
 | `buscar_lugar` | Provincias, departamentos, municipios, localidades y calles con id INDEC | Georef (datos.gob.ar) |
@@ -69,6 +71,8 @@ src/
   tools.ts      # tools de BCRA, dólar, inflación y feriados
   georef.ts     # tools de normalización geográfica
   series.ts     # tools de series de tiempo oficiales
+  mercado.ts    # riesgo país y plazos fijos
+  plazofijo.ts  # selección de tasa por plazo/monto y cálculo de TEA y tasa real
   ventana.ts    # workaround del bug de transformaciones de Series de Tiempo
   comun.ts      # helpers compartidos
   http.ts       # fetch con timeout + caché
@@ -88,7 +92,7 @@ src/
 ## Roadmap
 
 - [ ] Padrón de ARCA (constancia de inscripción) — requiere certificado del Web Service
-- [ ] Riesgo país y plazos fijos por banco
+- [x] Riesgo país y plazos fijos por banco (v0.3.0)
 - [ ] Publicación en npm (`npx mcp-datos-argentina`)
 - [ ] Transporte HTTP (Streamable HTTP) para uso remoto
 
