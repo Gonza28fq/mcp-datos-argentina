@@ -15,6 +15,7 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "smoke": "node scripts/smoke.mjs",
+    "docs": "node scripts/gen-manual.mjs",
     "prepublishOnly": "npm run build && npm test",
     "inspector": "npx @modelcontextprotocol/inspector node dist/index.js"
   },

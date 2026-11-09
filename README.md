@@ -2,6 +2,8 @@
 
 Servidor [MCP](https://modelcontextprotocol.io) que le da a Claude (o cualquier cliente MCP) acceso a **datos públicos de Argentina en tiempo real**: dólar, BCRA, Central de Deudores, inflación, feriados, direcciones y geografía (Georef) y miles de series oficiales del INDEC y ministerios.
 
+📖 **[Manual completo](docs/MANUAL.md)**: qué es MCP, cómo funciona el protocolo, instalación y referencia de cada tool.
+
 > "¿A cuánto está el blue?" · "¿Cuánto son hoy $100.000 de enero 2023?" · "¿Cómo está el CUIT 30-54668997-9 en la Central de Deudores?" · "¿Cuándo es el próximo feriado?"
 
 ## Tools
@@ -61,6 +63,7 @@ En `claude_desktop_config.json`:
 npm test           # tests unitarios (CUIT, cálculos de inflación)
 npm run smoke      # levanta el servidor y llama cada tool contra las APIs reales
 npm run inspector  # MCP Inspector para probar a mano
+npm run docs       # regenera la referencia de tools en docs/MANUAL.md
 ```
 
 Estructura:
