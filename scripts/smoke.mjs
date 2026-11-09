@@ -19,6 +19,24 @@ const casos = [
   ["feriados", { solo_proximos: true }],
   ["inflacion", {}],
   ["ajustar_por_inflacion", { monto: 100000, desde: "2023-01" }],
+  // Georef
+  ["normalizar_direccion", { direccion: "Av Rivadavia 1050", provincia: "caba" }],
+  ["normalizar_direccion", { direccion: "San Martin 300", provincia: "La Rioja" }],
+  ["normalizar_direcciones_lote", { direcciones: [
+    { direccion: "Corrientes 1234", provincia: "caba" },
+    { direccion: "Av Colon 500", provincia: "cordoba" },
+    { direccion: "calle inventada xyz 99" },
+  ] }],
+  ["buscar_lugar", { tipo: "municipios", provincia: "La Rioja", max: 3 }],
+  ["ubicacion_por_coordenadas", { lat: -29.4131, lon: -66.8558 }],
+  ["ubicacion_por_coordenadas", { lat: 40.4, lon: -3.7 }],
+  // Series de tiempo
+  ["buscar_series", { texto: "salario minimo", limite: 3 }],
+  ["consultar_series", { ids: ["148.3_INIVELNAL_DICI_M_26"], ultimos: 3 }],
+  ["consultar_series", { ids: ["148.3_INIVELNAL_DICI_M_26"], transformacion: "variacion_pct", ultimos: 3 }],
+  ["consultar_series", { ids: ["148.3_INIVELNAL_DICI_M_26"], transformacion: "variacion_interanual_pct", ultimos: 3 }],
+  ["consultar_series", { ids: ["148.3_INIVELNAL_DICI_M_26"], frecuencia: "year", ultimos: 3 }],
+  ["consultar_series", { ids: ["NO_EXISTE_123"] }],
 ];
 
 let fallos = 0;

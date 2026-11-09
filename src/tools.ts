@@ -1,49 +1,13 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { describeError, getJson, HttpError } from "./http.js";
+import { getJson, HttpError } from "./http.js";
+import { fail, fechaISO, HORA, hoy, mesISO, ok, safe } from "./comun.js";
 import { esCuitValido, formatearCuit, normalizarCuit } from "./cuit.js";
 import { acumulada, ajustarMonto, filtrarPorMes, mes, type PuntoInflacion } from "./inflacion.js";
 
 const BCRA = "https://api.bcra.gob.ar";
 const DOLAR_API = "https://dolarapi.com/v1";
 const ARG_DATOS = "https://api.argentinadatos.com/v1";
-
-const HORA = 60 * 60_000;
-
-// ---------- helpers ----------
-
-const ok = (data: unknown, resumen?: string): CallToolResult => ({
-  content: [
-    {
-      type: "text",
-      text: (resumen ? resumen + "\n\n" : "") + JSON.stringify(data, null, 2),
-    },
-  ],
-});
-
-const fail = (msg: string): CallToolResult => ({
-  content: [{ type: "text", text: msg }],
-  isError: true,
-});
-
-/** Envuelve el handler para que cualquier error de red vuelva como resultado legible. */
-function safe<A>(fn: (args: A) => Promise<CallToolResult>) {
-  return async (args: A): Promise<CallToolResult> => {
-    try {
-      return await fn(args);
-    } catch (err) {
-      return fail(`Error consultando la fuente: ${describeError(err)}`);
-    }
-  };
-}
-
-const fechaISO = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Formato esperado: YYYY-MM-DD");
-const mesISO = z.string().regex(/^\d{4}-\d{2}$/, "Formato esperado: YYYY-MM");
-
-const hoy = () => new Date().toISOString().slice(0, 10);
 
 // ---------- tipos de las APIs ----------
 

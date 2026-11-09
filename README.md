@@ -1,6 +1,6 @@
 # mcp-datos-argentina 🇦🇷
 
-Servidor [MCP](https://modelcontextprotocol.io) que le da a Claude (o cualquier cliente MCP) acceso a **datos públicos de Argentina en tiempo real**: dólar, BCRA, Central de Deudores, inflación y feriados.
+Servidor [MCP](https://modelcontextprotocol.io) que le da a Claude (o cualquier cliente MCP) acceso a **datos públicos de Argentina en tiempo real**: dólar, BCRA, Central de Deudores, inflación, feriados, direcciones y geografía (Georef) y miles de series oficiales del INDEC y ministerios.
 
 > "¿A cuánto está el blue?" · "¿Cuánto son hoy $100.000 de enero 2023?" · "¿Cómo está el CUIT 30-54668997-9 en la Central de Deudores?" · "¿Cuándo es el próximo feriado?"
 
@@ -16,6 +16,12 @@ Servidor [MCP](https://modelcontextprotocol.io) que le da a Claude (o cualquier 
 | `feriados` | Feriados nacionales del año (o solo los próximos) | argentinadatos.com |
 | `inflacion` | IPC mensual y acumulada en un rango | argentinadatos.com |
 | `ajustar_por_inflacion` | Lleva un monto de un mes a otro por IPC (hacia adelante o atrás) | argentinadatos.com |
+| `normalizar_direccion` | Normaliza y geolocaliza una dirección; si no hay altura, sugiere la calle | Georef (datos.gob.ar) |
+| `normalizar_direcciones_lote` | Hasta 500 direcciones en una llamada, con % de éxito | Georef (datos.gob.ar) |
+| `buscar_lugar` | Provincias, departamentos, municipios, localidades y calles con id INDEC | Georef (datos.gob.ar) |
+| `ubicacion_por_coordenadas` | Qué provincia/departamento/municipio contiene un punto | Georef (datos.gob.ar) |
+| `buscar_series` | Busca entre las series oficiales (INDEC y ministerios): salarios, EMAE, empleo, IPC por rubro… | Series de Tiempo (datos.gob.ar) |
+| `consultar_series` | Valores, variación %, variación interanual y cambio de frecuencia de hasta 10 series | Series de Tiempo (datos.gob.ar) |
 
 Ninguna API requiere token. Las respuestas se cachean en memoria (2 min a 24 h según la fuente).
 
@@ -60,7 +66,11 @@ Estructura:
 ```
 src/
   index.ts      # arranque del servidor (stdio)
-  tools.ts      # definición de las 8 tools
+  tools.ts      # tools de BCRA, dólar, inflación y feriados
+  georef.ts     # tools de normalización geográfica
+  series.ts     # tools de series de tiempo oficiales
+  ventana.ts    # workaround del bug de transformaciones de Series de Tiempo
+  comun.ts      # helpers compartidos
   http.ts       # fetch con timeout + caché
   cuit.ts       # validación de CUIT/CUIL
   inflacion.ts  # inflación acumulada y ajuste de montos
@@ -71,6 +81,9 @@ src/
 - Los montos de la Central de Deudores se devuelven tal como los informa la API del BCRA. Su documentación pública no especifica la unidad (pesos o miles de pesos), así que conviene tomarlos como valores relativos.
 - La inflación usa el IPC mensual de INDEC; el ajuste compone los meses posteriores al mes de origen hasta el de destino inclusive.
 - La API de estadísticas v3 del BCRA fue deprecada (devuelve 410); este servidor usa la v4.
+- **Bug conocido de Series de Tiempo:** al combinar `last`/`limit` con una transformación (variación, interanual), la API corre la ventana hacia atrás y omite los períodos más recientes (con la interanual, un año entero). `consultar_series` lo esquiva pidiendo con `start_date` (ver `src/ventana.ts`).
+- Georef no tiene alturas cargadas para muchas calles del interior: en esos casos `normalizar_direccion` devuelve las calles candidatas en lugar de coordenadas exactas.
+- Al agregar a frecuencia anual, la API omite el año en curso (incompleto).
 
 ## Roadmap
 

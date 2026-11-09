@@ -40,12 +40,37 @@ export async function getJson<T>(
   return value;
 }
 
-/** Extrae un mensaje legible de los errores del BCRA ({ errorMessages: [...] }). */
+/** POST JSON sin caché (se usa para lotes, donde cada cuerpo es distinto). */
+export async function postJson<T>(url: string, body: unknown, opts: { timeoutMs?: number } = {}): Promise<T> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json", "User-Agent": USER_AGENT },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(opts.timeoutMs ?? 60_000),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new HttpError(res.status, url, text);
+  return JSON.parse(text) as T;
+}
+
+/**
+ * Extrae un mensaje legible de los errores de cada API:
+ * BCRA { errorMessages: [...] } · Series { errors: [{ error }] } · Georef { errores: [{ mensaje }] }
+ */
 export function describeError(err: unknown): string {
   if (err instanceof HttpError) {
     try {
-      const parsed = JSON.parse(err.body) as { errorMessages?: string[] };
-      if (parsed.errorMessages?.length) return `${err.message}: ${parsed.errorMessages.join("; ")}`;
+      const parsed = JSON.parse(err.body) as {
+        errorMessages?: string[];
+        errors?: { error?: string }[];
+        errores?: { mensaje?: string }[];
+      };
+      const msgs = [
+        ...(parsed.errorMessages ?? []),
+        ...(parsed.errors ?? []).map((e) => e.error),
+        ...(parsed.errores ?? []).map((e) => e.mensaje),
+      ].filter(Boolean);
+      if (msgs.length) return `${err.message}: ${msgs.join("; ")}`;
     } catch {
       /* body no era JSON */
     }
