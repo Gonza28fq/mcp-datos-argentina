@@ -31,7 +31,7 @@ Ninguna API requiere token. Las respuestas se cachean en memoria (2 min a 24 h s
 
 ## Instalación
 
-Requiere Node.js 20 o superior. Publicado en npm como [`mcp-datos-argentina`](https://www.npmjs.com/package/mcp-datos-argentina).
+Requiere Node.js 20 o superior. Publicado en npm como [`mcp-datos-argentina`](https://www.npmjs.com/package/mcp-datos-argentina) y listado en el [registro oficial de MCP](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.Gonza28fq/mcp-datos-argentina) como `io.github.Gonza28fq/mcp-datos-argentina`.
 
 ### Claude Code
 
@@ -104,6 +104,7 @@ src/
 - [ ] Padrón de ARCA (constancia de inscripción) — requiere certificado del Web Service
 - [x] Riesgo país y plazos fijos por banco (v0.3.0)
 - [x] Publicación en npm (`npx mcp-datos-argentina`)
+- [x] Listado en el registro oficial de MCP
 - [ ] Transporte HTTP (Streamable HTTP) para uso remoto
 
 ## Licencia

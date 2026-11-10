@@ -2,3 +2,5 @@ node_modules/
 dist/
 *.log
 .env
+mcp-publisher.exe
+.mcpregistry_*
