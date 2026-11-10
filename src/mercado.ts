@@ -125,7 +125,7 @@ export function registerMercado(server: McpServer) {
         resumen +=
           ` Contra la última inflación mensual (${fmt(ultInfl.valor)}% en ${ultInfl.fecha.slice(0, 7)}), ` +
           `rinde ${signo(mejor.tasaRealMensualPct)}% real por mes ` +
-          `(${mejor.tasaRealMensualPct >= 0 ? "le gana" : "pierde contra"} la inflación).`;
+          `(${mejor.tasaRealMensualPct >= 0 ? "le gana a" : "pierde contra"} la inflación).`;
       }
       return ok(filas, resumen + "\nNota: las tasas se actualizan con demora; confirmalas con el banco antes de invertir.");
     }),

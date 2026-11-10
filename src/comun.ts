@@ -34,6 +34,8 @@ export function safe<A>(fn: (args: A) => Promise<CallToolResult>) {
 export const fechaISO = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato esperado: YYYY-MM-DD");
 export const mesISO = z.string().regex(/^\d{4}-\d{2}$/, "Formato esperado: YYYY-MM");
 
-export const hoy = () => new Date().toISOString().slice(0, 10);
+/** Fecha de hoy (YYYY-MM-DD) en hora argentina: en UTC, después de las 21 h ya sería mañana y las APIs rechazan fechas futuras. */
+export const hoy = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date());
 
 export const SOLO_LECTURA = { readOnlyHint: true, openWorldHint: true } as const;

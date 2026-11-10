@@ -1,0 +1,67 @@
+name: Release
+
+# Se dispara al subir un tag de versión (lo crea `npm version patch|minor|major`).
+# Publica en npm con Trusted Publishing (OIDC, sin tokens ni OTP, con provenance)
+# y después actualiza la entrada del Registro MCP, también por OIDC.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write # OIDC: lo usan npm (trusted publishing) y mcp-publisher (login github-oidc)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      MCP_PUBLISHER_VERSION: v1.8.1
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24 # trae npm 11 (trusted publishing exige npm >= 11.5.1)
+          registry-url: https://registry.npmjs.org
+
+      - name: Verificar que el tag coincide con package.json y server.json
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          srv="$(node -p "require('./server.json').version")"
+          echo "tag=$tag package.json=$pkg server.json=$srv"
+          [ "$tag" = "$pkg" ] && [ "$tag" = "$srv" ] || { echo "::error::Versiones distintas"; exit 1; }
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+      - name: Publicar en npm (trusted publishing)
+        run: npm publish --access public
+
+      # --- Registro MCP ---
+
+      - name: Instalar cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Descargar y verificar mcp-publisher
+        run: |
+          set -euo pipefail
+          archive="mcp-publisher_linux_amd64.tar.gz"
+          base_url="https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}"
+          curl --fail --location --silent --show-error --output "$archive" "$base_url/$archive"
+          curl --fail --location --silent --show-error --output "$archive.sigstore.json" "$base_url/$archive.sigstore.json"
+          cosign verify-blob \
+            --bundle "$archive.sigstore.json" \
+            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release.yml@refs/tags/${MCP_PUBLISHER_VERSION}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "$archive"
+          tar xzf "$archive" mcp-publisher
+          rm -f "$archive" "$archive.sigstore.json"
+
+      - name: Login en el Registro MCP (OIDC)
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publicar en el Registro MCP
+        run: ./mcp-publisher publish

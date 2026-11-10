@@ -303,7 +303,7 @@ export function registerTools(server: McpServer) {
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     safe(async ({ anio, solo_proximos }) => {
-      const year = anio ?? new Date().getFullYear();
+      const year = anio ?? Number(hoy().slice(0, 4));
       const lista = await getJson<{ fecha: string; tipo: string; nombre: string }[]>(
         `${ARG_DATOS}/feriados/${year}`,
         { ttlMs: 24 * HORA },

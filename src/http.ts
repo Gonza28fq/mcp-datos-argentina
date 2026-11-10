@@ -4,8 +4,9 @@
  * así que cachear unos minutos evita martillarlas cuando el modelo repite consultas.
  */
 
+import { USER_AGENT } from "./version.js";
+
 const DEFAULT_TIMEOUT_MS = 15_000;
-const USER_AGENT = "mcp-datos-argentina/0.1 (+https://github.com/)";
 
 export class HttpError extends Error {
   constructor(

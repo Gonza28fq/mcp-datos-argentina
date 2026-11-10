@@ -17,6 +17,7 @@
     "smoke": "node scripts/smoke.mjs",
     "docs": "node scripts/gen-manual.mjs",
     "prepublishOnly": "npm run build && npm test",
+    "version": "node scripts/sync-version.mjs && git add server.json",
     "inspector": "npx @modelcontextprotocol/inspector node dist/index.js"
   },
   "keywords": [

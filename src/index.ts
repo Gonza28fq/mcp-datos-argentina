@@ -5,9 +5,10 @@ import { registerTools } from "./tools.js";
 import { registerGeoref } from "./georef.js";
 import { registerSeries } from "./series.js";
 import { registerMercado } from "./mercado.js";
+import { VERSION } from "./version.js";
 
 const server = new McpServer(
-  { name: "mcp-datos-argentina", version: "0.3.0" },
+  { name: "mcp-datos-argentina", version: VERSION },
   {
     instructions:
       "Datos públicos de Argentina en tiempo real: dólar (oficial, blue, MEP, CCL), riesgo país, plazos fijos por banco, cotizaciones y variables del BCRA, " +
