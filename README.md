@@ -31,15 +31,12 @@ Ninguna API requiere token. Las respuestas se cachean en memoria (2 min a 24 h s
 
 ## Instalación
 
-```bash
-npm install
-npm run build
-```
+Requiere Node.js 20 o superior. Publicado en npm como [`mcp-datos-argentina`](https://www.npmjs.com/package/mcp-datos-argentina).
 
 ### Claude Code
 
 ```bash
-claude mcp add datos-argentina -- node /ruta/a/mcp-datos-argentina/dist/index.js
+claude mcp add --scope user datos-argentina -- npx -y mcp-datos-argentina
 ```
 
 ### Claude Desktop
@@ -50,11 +47,21 @@ En `claude_desktop_config.json`:
 {
   "mcpServers": {
     "datos-argentina": {
-      "command": "node",
-      "args": ["C:/ruta/a/mcp-datos-argentina/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "mcp-datos-argentina"]
     }
   }
 }
+```
+
+### Desde el código fuente
+
+```bash
+git clone https://github.com/Gonza28fq/mcp-datos-argentina.git
+cd mcp-datos-argentina
+npm install
+npm run build
+claude mcp add datos-argentina -- node /ruta/a/mcp-datos-argentina/dist/index.js
 ```
 
 ## Desarrollo
@@ -96,7 +103,7 @@ src/
 
 - [ ] Padrón de ARCA (constancia de inscripción) — requiere certificado del Web Service
 - [x] Riesgo país y plazos fijos por banco (v0.3.0)
-- [ ] Publicación en npm (`npx mcp-datos-argentina`)
+- [x] Publicación en npm (`npx mcp-datos-argentina`)
 - [ ] Transporte HTTP (Streamable HTTP) para uso remoto
 
 ## Licencia

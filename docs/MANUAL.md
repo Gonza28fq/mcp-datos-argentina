@@ -168,7 +168,36 @@ Capturados de una sesión con este servidor. Se muestran con sangría para leerl
 
 ## Instalación
 
-Necesitás **Node.js 20 o superior** (comprobalo con `node -v`) y git.
+Necesitás **Node.js 20 o superior** (comprobalo con `node -v`).
+
+### Rápida: con npx (recomendada)
+
+El paquete está publicado en npm ([mcp-datos-argentina](https://www.npmjs.com/package/mcp-datos-argentina)): no hace falta clonar ni compilar, `npx` lo descarga y lo ejecuta.
+
+```bash
+claude mcp add --scope user datos-argentina -- npx -y mcp-datos-argentina
+claude mcp list   # verificá que conecta
+```
+
+En Claude Desktop u otros clientes, usá `npx` como comando:
+
+```json
+{
+  "mcpServers": {
+    "datos-argentina": {
+      "command": "npx",
+      "args": ["-y", "mcp-datos-argentina"]
+    }
+  }
+}
+```
+
+> [!TIP]
+> En Windows, si Claude Desktop no encuentra `npx`, usá `"command": "cmd"` con `"args": ["/c", "npx", "-y", "mcp-datos-argentina"]`.
+
+### Desde el código fuente
+
+Si querés modificarlo o fijar una versión exacta del código, necesitás además git:
 
 ```bash
 git clone https://github.com/Gonza28fq/mcp-datos-argentina.git
@@ -179,7 +208,7 @@ npm run build
 
 Eso genera `dist/index.js`, el archivo que va a ejecutar tu aplicación. Anotá su ruta completa.
 
-### Claude Code
+#### Claude Code
 
 Con `--scope user` queda disponible en todos tus proyectos; sin él, solo en la carpeta actual.
 
@@ -190,7 +219,7 @@ claude mcp list   # verificá que conecta
 
 Dentro de una sesión, `/mcp` muestra el estado y las 16 tools.
 
-### Claude Desktop
+#### Claude Desktop
 
 Editá el archivo de configuración (en la app: **Configuración → Desarrollador → Editar configuración**):
 
@@ -214,7 +243,7 @@ Agregá el servidor dentro de `mcpServers` (si ya tenés otros, sumalo a la list
 
 Cerrá Claude Desktop por completo y volvé a abrirlo.
 
-### Otros clientes
+#### Otros clientes
 
 Cualquier aplicación compatible con MCP por stdio sirve. Lo que siempre vas a configurar:
 
@@ -224,17 +253,6 @@ Cualquier aplicación compatible con MCP por stdio sirve. Lo que siempre vas a c
 | Comando | `node` |
 | Argumentos | `/ruta/completa/dist/index.js` |
 | Variables de entorno | ninguna |
-
-### Con npx (próximamente)
-
-Cuando el paquete esté publicado en npm no vas a necesitar clonar ni compilar:
-
-```bash
-claude mcp add --scope user datos-argentina -- npx -y mcp-datos-argentina
-```
-
-> [!NOTE]
-> Todavía no está publicado en npm: hasta entonces usá la instalación desde el repositorio.
 
 ## Formas de consultar
 
