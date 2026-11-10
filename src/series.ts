@@ -6,6 +6,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getJson } from "./http.js";
 import { fail, fechaISO, HORA, ok, safe, SOLO_LECTURA } from "./comun.js";
+import * as S from "./esquemas.js";
 import { esPorcentual, inicioVentana, type Frecuencia, type Transformacion } from "./ventana.js";
 
 const SERIES = "https://apis.datos.gob.ar/series/api";
@@ -63,6 +64,7 @@ export function registerSeries(server: McpServer) {
         texto: z.string().min(2).describe("Términos de búsqueda, ej. 'salario minimo', 'ipc alimentos', 'emae', 'canasta basica'."),
         limite: z.number().int().min(1).max(50).default(10),
       },
+      outputSchema: S.salidaBuscarSeries,
       annotations: SOLO_LECTURA,
     },
     safe(async ({ texto, limite }) => {
@@ -79,7 +81,7 @@ export function registerSeries(server: McpServer) {
         dataset: d.title,
         fuente: d.source,
       }));
-      return ok(lista, `${lista.length} series encontradas para "${texto}".`);
+      return ok({ series: lista }, `${lista.length} series encontradas para "${texto}".`);
     }),
   );
 
@@ -108,6 +110,7 @@ export function registerSeries(server: McpServer) {
         hasta: fechaISO.optional(),
         ultimos: z.number().int().min(1).max(500).default(12).describe("Si no hay 'desde', cantidad de valores más recientes."),
       },
+      outputSchema: S.salidaConsultarSeries,
       annotations: SOLO_LECTURA,
     },
     safe(async ({ ids, transformacion, frecuencia, agregacion, desde, hasta, ultimos }) => {

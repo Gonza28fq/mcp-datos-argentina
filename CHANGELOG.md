@@ -5,6 +5,8 @@ y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [0.4.0] - 2026-11-10
+
 ### Agregado
 - **Prompts MCP**: plantillas listas que combinan varias tools.
   - `informe_economico_del_dia`: dólar y brechas, riesgo país, inflación, mejor plazo fijo y próximo feriado.
@@ -13,9 +15,14 @@ y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
   - `poder_adquisitivo` (`monto`, `desde`): monto actualizado por inflación y comparado con el dólar.
 - Los montos de los prompts aceptan formato argentino (`1.000.000`, `$ 1.500,50`).
 - El manual (`docs/MANUAL.md`) incluye una tabla de prompts generada desde `prompts/list`.
+- **Resources MCP**: `datos-argentina://bcra/variables`, `datos-argentina://bcra/situaciones`, `datos-argentina://georef/provincias` y la plantilla `datos-argentina://feriados/{anio}` (con autocompletado del año).
+- **Salida estructurada**: las 16 tools declaran `outputSchema` y devuelven `structuredContent` validado. Los esquemas están en `src/esquemas.ts`; los campos que vienen de APIs externas son opcionales para tolerar cambios en la fuente.
+- El smoke test (`npm run smoke`) ahora falla si una tool no tiene esquema, si su salida no lo cumple, si aparece un error inesperado o si un resource no se puede leer.
 - Este `CHANGELOG.md`.
 
 ### Cambiado
+- **El JSON de las respuestas siempre es un objeto.** Las tools que devolvían una lista ahora la envuelven en un campo con nombre (`cotizaciones`, `variables`, `valores`, `feriados`, `opciones`, `direcciones`, `resultados`, `series`). `cotizacion_bcra` devuelve el mismo formato con o sin moneda, y `consultar_deudor` el mismo con o sin deudas. Afecta solo a quien parseaba el JSON del texto; el resumen legible no cambia.
+- `feriados` informa el año consultado y la fecha del próximo feriado; `plazos_fijos`, la inflación usada para la tasa real.
 - Release: el workflow espera a que npm procese la versión antes de publicar en el Registro MCP, y saltea `npm publish` si la versión ya existe (permite re-correr el job).
 
 ## [0.3.1] - 2026-11-10
@@ -55,7 +62,8 @@ Primera versión publicada automáticamente desde GitHub Actions.
   `consultar_deudor` (Central de Deudores, con validación de CUIT), `feriados`, `inflacion` y `ajustar_por_inflacion`.
 - Caché en memoria por fuente y transporte stdio.
 
-[Sin publicar]: https://github.com/Gonza28fq/mcp-datos-argentina/compare/v0.3.1...HEAD
+[Sin publicar]: https://github.com/Gonza28fq/mcp-datos-argentina/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Gonza28fq/mcp-datos-argentina/releases/tag/v0.4.0
 [0.3.1]: https://github.com/Gonza28fq/mcp-datos-argentina/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Gonza28fq/mcp-datos-argentina/commit/7748c96
 [0.2.0]: https://github.com/Gonza28fq/mcp-datos-argentina/commit/961dae9

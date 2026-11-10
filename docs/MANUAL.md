@@ -563,6 +563,40 @@ En Claude Code se invocan como `/mcp__datos-argentina__<nombre>`; en Claude Desk
 | `plazo_fijo_vs_inflacion` · Plazo fijo vs. inflación | Compara los mejores plazos fijos contra la inflación reciente y calcula el dólar de equilibrio. | `monto`, `dias` (opcional) |
 | `poder_adquisitivo` · Poder adquisitivo de un monto | Actualiza un monto de un mes pasado por inflación y lo compara contra el dólar. | `monto`, `desde` |
 
+### Resources (catálogos)
+
+Datos que se pueden adjuntar como contexto sin llamar una tool. En Claude Code se mencionan con `@`.
+
+| URI | Qué contiene |
+|---|---|
+| `datos-argentina://bcra/situaciones` | Qué significa cada situación (1 a 6) que informa la Central de Deudores del BCRA. |
+| `datos-argentina://bcra/variables` | Las ~1600 variables monetarias del BCRA (API v4) con id, descripción, categoría, unidad y periodicidad. El id se usa en serie_variable_bcra. |
+| `datos-argentina://georef/provincias` | Las 24 jurisdicciones con su id INDEC y centroide (Georef). El id sirve como filtro en las tools de Georef. |
+| `datos-argentina://feriados/{anio}` | Calendario de feriados nacionales (inamovibles, trasladables y no laborables) de un año, desde 2016. |
+
+### Salida estructurada
+
+Todas las tools declaran `outputSchema` y devuelven, además del texto, los mismos datos en `structuredContent`. Un cliente o un programa puede leer esos campos tipados sin parsear el texto.
+
+| Tool | Campos principales |
+|---|---|
+| `cotizaciones_dolar` | `cotizaciones` |
+| `cotizacion_bcra` | `cotizaciones` |
+| `buscar_variables_bcra` | `total`, `variables` |
+| `serie_variable_bcra` | `id`, `valores` |
+| `consultar_deudor` | `cuit`, `denominacion`, `periodos`, `chequesRechazados` |
+| `feriados` | `anio`, `proximo`, `feriados` |
+| `inflacion` | `meses`, `acumuladaPct` |
+| `ajustar_por_inflacion` | `montoOriginal`, `montoAjustado`, `inflacionAcumuladaPct`, `mesesConsiderados`, `primerMes`, `ultimoMes`, `advertencia` |
+| `normalizar_direccion` | `direccionEncontrada`, `total`, `direcciones`, `callesSugeridas` |
+| `normalizar_direcciones_lote` | `total`, `encontradas`, `resultados` |
+| `buscar_lugar` | `tipo`, `total`, `resultados` |
+| `ubicacion_por_coordenadas` | `lat`, `lon`, `provincia`, `departamento`, `municipio` |
+| `buscar_series` | `series` |
+| `consultar_series` | `series`, `datos` |
+| `riesgo_pais` | `ultimo`, `variacionDiariaPb`, `variacionPeriodoPb`, `variacionPeriodoPct`, `minimo`, `maximo`, `serie` |
+| `plazos_fijos` | `dias`, `entidadesConTasa`, `totalEntidades`, `inflacionReferencia`, `opciones` |
+
 <!-- REFERENCIA:FIN -->
 
 ## Límites y uso responsable

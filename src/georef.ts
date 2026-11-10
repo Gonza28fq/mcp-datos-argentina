@@ -6,6 +6,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getJson, postJson } from "./http.js";
 import { fail, HORA, ok, safe, SOLO_LECTURA } from "./comun.js";
+import * as S from "./esquemas.js";
 
 const GEOREF = "https://apis.datos.gob.ar/georef/api";
 
@@ -81,6 +82,7 @@ export function registerGeoref(server: McpServer) {
         ...filtrosGeo,
         max: z.number().int().min(1).max(20).default(5),
       },
+      outputSchema: S.salidaNormalizarDireccion,
       annotations: SOLO_LECTURA,
     },
     safe(async ({ direccion, max, ...f }) => {
@@ -90,7 +92,7 @@ export function registerGeoref(server: McpServer) {
 
       if (r.total > 0) {
         const lista = r.direcciones.map(simplificar);
-        return ok(lista, `${r.total} coincidencia(s). Mejor resultado: ${lista[0].nomenclatura} (${lista[0].lat}, ${lista[0].lon}).`);
+        return ok({ direccionEncontrada: true, total: r.total, direcciones: lista, callesSugeridas: [] }, `${r.total} coincidencia(s). Mejor resultado: ${lista[0].nomenclatura} (${lista[0].lat}, ${lista[0].lon}).`);
       }
 
       // Plan B: muchas calles del interior no tienen alturas cargadas → al menos ubicar la calle.
@@ -109,7 +111,7 @@ export function registerGeoref(server: McpServer) {
         idCalle: c.id,
       }));
       return ok(
-        { direccionEncontrada: false, callesSugeridas: sugerencias },
+        { direccionEncontrada: false, total: 0, direcciones: [], callesSugeridas: sugerencias },
         `No se pudo geolocalizar la altura exacta (Georef no tiene numeración para esa calle o zona), ` +
           `pero "${nombreCalle}" existe en ${calles.total} lugar(es). Acotá con provincia/localidad si hace falta.`,
       );
@@ -137,6 +139,7 @@ export function registerGeoref(server: McpServer) {
           .min(1)
           .max(500),
       },
+      outputSchema: S.salidaNormalizarDireccionesLote,
       annotations: SOLO_LECTURA,
     },
     safe(async ({ direcciones }) => {
@@ -158,7 +161,7 @@ export function registerGeoref(server: McpServer) {
       });
       const encontradas = filas.filter((f) => f.encontrada).length;
       return ok(
-        filas,
+        { total: filas.length, encontradas, resultados: filas },
         `${encontradas}/${filas.length} direcciones normalizadas (${((encontradas / filas.length) * 100).toFixed(0)}%).` +
           (encontradas < filas.length
             ? " Las no encontradas suelen ser calles sin numeración en Georef o direcciones ambiguas: probá agregando provincia/localidad, o usá normalizar_direccion para ver sugerencias."
@@ -181,6 +184,7 @@ export function registerGeoref(server: McpServer) {
         provincia: z.string().optional().describe("Provincia para acotar (no aplica a tipo=provincias)."),
         max: z.number().int().min(1).max(500).default(20),
       },
+      outputSchema: S.salidaBuscarLugar,
       annotations: SOLO_LECTURA,
     },
     safe(async ({ tipo, nombre, provincia, max }) => {
@@ -193,7 +197,7 @@ export function registerGeoref(server: McpServer) {
       });
       const lista = (r[tipo] as Record<string, unknown>[]) ?? [];
       if (!lista.length) return fail(`No se encontraron ${tipo}${nombre ? ` con nombre "${nombre}"` : ""}.`);
-      return ok(lista, `${r.total} ${tipo} encontrados (mostrando ${lista.length}).`);
+      return ok({ tipo, total: r.total, resultados: lista }, `${r.total} ${tipo} encontrados (mostrando ${lista.length}).`);
     }),
   );
 
@@ -207,6 +211,7 @@ export function registerGeoref(server: McpServer) {
         lat: z.number().min(-90).max(90),
         lon: z.number().min(-180).max(180),
       },
+      outputSchema: S.salidaUbicacionPorCoordenadas,
       annotations: SOLO_LECTURA,
     },
     safe(async ({ lat, lon }) => {
@@ -217,7 +222,7 @@ export function registerGeoref(server: McpServer) {
       const u = r.ubicacion;
       if (!u.provincia.id) return fail(`El punto (${lat}, ${lon}) no cae dentro del territorio argentino.`);
       return ok(
-        u,
+        { lat, lon, provincia: u.provincia, departamento: u.departamento, municipio: u.municipio },
         `(${lat}, ${lon}) → ${[u.municipio.nombre, u.departamento.nombre, u.provincia.nombre].filter(Boolean).join(", ")}.`,
       );
     }),

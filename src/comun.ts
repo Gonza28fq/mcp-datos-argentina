@@ -5,8 +5,12 @@ import { describeError } from "./http.js";
 
 export const HORA = 60 * 60_000;
 
-/** Resultado OK: un resumen legible arriba y el JSON completo abajo. */
-export const ok = (data: unknown, resumen?: string): CallToolResult => ({
+/**
+ * Resultado OK: un resumen legible arriba y el JSON completo abajo (para clientes que solo leen texto),
+ * y los mismos datos en structuredContent, validados contra el outputSchema de la tool.
+ */
+export const ok = (data: Record<string, unknown>, resumen?: string): CallToolResult => ({
+  structuredContent: data,
   content: [
     {
       type: "text",

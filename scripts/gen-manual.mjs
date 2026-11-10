@@ -61,6 +61,10 @@ const client = new Client({ name: "gen-manual", version: "0.0.0" });
 await client.connect(new StdioClientTransport({ command: "node", args: ["dist/index.js"], stderr: "ignore" }));
 const { tools } = await client.listTools();
 const { prompts } = await client.listPrompts();
+const { resources: todos } = await client.listResources();
+const { resourceTemplates } = await client.listResourceTemplates();
+// Los feriados por año salen de la plantilla: no listar cada año como recurso aparte.
+const resources = todos.filter((r) => !resourceTemplates.some((t) => r.uri.startsWith(t.uriTemplate.split("{")[0])));
 await client.close();
 
 const porNombre = new Map(tools.map((t) => [t.name, t]));
@@ -92,10 +96,24 @@ for (const p of prompts) {
   const args = (p.arguments ?? []).map((a) => `\`${a.name}\`${a.required ? "" : " (opcional)"}`).join(", ") || "—";
   md += `| \`${p.name}\` · ${celda(p.title)} | ${celda(p.description)} | ${args} |\n`;
 }
+md += "\n### Resources (catálogos)\n\n";
+md += "Datos que se pueden adjuntar como contexto sin llamar una tool. En Claude Code se mencionan con `@`.\n\n";
+md += "| URI | Qué contiene |\n|---|---|\n";
+for (const r of resources) md += `| \`${r.uri}\` | ${celda(r.description)} |\n`;
+for (const t of resourceTemplates) md += `| \`${t.uriTemplate}\` | ${celda(t.description)} |\n`;
+
+md += "\n### Salida estructurada\n\n";
+md += "Todas las tools declaran `outputSchema` y devuelven, además del texto, los mismos datos en `structuredContent`. ";
+md += "Un cliente o un programa puede leer esos campos tipados sin parsear el texto.\n\n";
+md += "| Tool | Campos principales |\n|---|---|\n";
+for (const t of tools) {
+  const campos = Object.keys(t.outputSchema?.properties ?? {}).map((k) => `\`${k}\``).join(", ");
+  md += `| \`${t.name}\` | ${campos || "—"} |\n`;
+}
 md += `\n${FIN}`;
 
 const actual = readFileSync(MANUAL, "utf8");
 const i = actual.indexOf(INICIO), f = actual.indexOf(FIN);
 if (i < 0 || f < 0) throw new Error(`No encontré los marcadores de referencia en ${MANUAL}`);
 writeFileSync(MANUAL, actual.slice(0, i) + md + actual.slice(f + FIN.length));
-console.log(`${MANUAL}: referencia regenerada con ${tools.length} tools y ${prompts.length} prompts`);
+console.log(`${MANUAL}: referencia regenerada con ${tools.length} tools, ${prompts.length} prompts y ${resources.length + resourceTemplates.length} resources`);

@@ -45,6 +45,21 @@ Plantillas listas que combinan varias tools. En Claude Code se invocan como `/mc
 | `plazo_fijo_vs_inflacion` | Mejores plazos fijos, tasa real y dólar MEP de equilibrio | `monto`, `dias` (opcional) |
 | `poder_adquisitivo` | Un monto de un mes pasado actualizado por inflación y comparado con el dólar | `monto`, `desde` (YYYY-MM) |
 
+## Resources
+
+Catálogos que se pueden adjuntar como contexto sin llamar una tool (en Claude Code, con `@`).
+
+| URI | Contenido |
+|---|---|
+| `datos-argentina://bcra/variables` | Las ~1600 variables monetarias del BCRA con id, unidad y periodicidad |
+| `datos-argentina://bcra/situaciones` | Qué significa cada situación (1 a 6) de la Central de Deudores |
+| `datos-argentina://georef/provincias` | Las 24 jurisdicciones con id INDEC y centroide |
+| `datos-argentina://feriados/{anio}` | Feriados nacionales de un año (desde 2016, con autocompletado) |
+
+## Salida estructurada
+
+Todas las tools declaran `outputSchema` y devuelven los datos también en `structuredContent`, validados contra ese esquema. Un programa puede consumirlos tipados sin parsear el texto. Los campos de cada tool están en el [manual](docs/MANUAL.md).
+
 ## Instalación
 
 Requiere Node.js 20 o superior. Publicado en npm como [`mcp-datos-argentina`](https://www.npmjs.com/package/mcp-datos-argentina) y listado en el [registro oficial de MCP](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.Gonza28fq/mcp-datos-argentina) como `io.github.Gonza28fq/mcp-datos-argentina`.
@@ -122,8 +137,8 @@ src/
 - [x] Publicación en npm (`npx mcp-datos-argentina`)
 - [x] Listado en el registro oficial de MCP
 - [x] Prompts MCP (informe del día, análisis crediticio, plazo fijo vs. inflación, poder adquisitivo)
-- [ ] Resources (catálogos de variables BCRA, provincias, feriados)
-- [ ] Salida estructurada (`outputSchema`)
+- [x] Resources (catálogos de variables BCRA, situaciones, provincias, feriados)
+- [x] Salida estructurada (`outputSchema` en las 16 tools)
 - [ ] Transporte HTTP (Streamable HTTP) para uso remoto
 
 Historial de cambios en [CHANGELOG.md](CHANGELOG.md).

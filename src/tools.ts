@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getJson, HttpError } from "./http.js";
+import * as S from "./esquemas.js";
 import { fail, fechaISO, HORA, hoy, mesISO, ok, safe } from "./comun.js";
 import { esCuitValido, formatearCuit, normalizarCuit } from "./cuit.js";
 import { acumulada, ajustarMonto, filtrarPorMes, mes, type PuntoInflacion } from "./inflacion.js";
@@ -57,7 +58,7 @@ type Deudas = {
   periodos: { periodo: string; entidades: EntidadDeuda[] }[];
 };
 
-const SITUACIONES: Record<number, string> = {
+export const SITUACIONES: Record<number, string> = {
   1: "Normal",
   2: "Con seguimiento especial / riesgo bajo",
   3: "Con problemas / riesgo medio",
@@ -82,6 +83,7 @@ export function registerTools(server: McpServer) {
           .optional()
           .describe("Tipo de dólar. Si se omite, devuelve todos."),
       },
+      outputSchema: S.salidaCotizacionesDolar,
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     safe(async ({ casa }) => {
@@ -91,7 +93,15 @@ export function registerTools(server: McpServer) {
       const resumen = lista
         .map((d) => `${d.nombre}: compra ${d.compra ?? "-"} / venta ${d.venta ?? "-"}`)
         .join("\n");
-      return ok(lista, resumen);
+      const cotizaciones = lista.map((d) => ({
+        casa: d.casa,
+        nombre: d.nombre,
+        moneda: d.moneda,
+        compra: d.compra,
+        venta: d.venta,
+        fechaActualizacion: d.fechaActualizacion,
+      }));
+      return ok({ cotizaciones }, resumen);
     }),
   );
 
@@ -111,12 +121,20 @@ export function registerTools(server: McpServer) {
         desde: fechaISO.optional().describe("Fecha inicial YYYY-MM-DD (requiere moneda)."),
         hasta: fechaISO.optional().describe("Fecha final YYYY-MM-DD (por defecto hoy)."),
       },
+      outputSchema: S.salidaCotizacionBcra,
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     safe(async ({ moneda, desde, hasta }) => {
       if (!moneda) {
         const r = await getJson<BcraResp<Cotizacion>>(`${BCRA}/estadisticascambiarias/v1.0/Cotizaciones`);
-        return ok(r.results, `Cotizaciones BCRA del ${r.results.fecha}`);
+        const cotizaciones = r.results.detalle.map((d) => ({
+          fecha: r.results.fecha,
+          moneda: d.codigoMoneda,
+          descripcion: d.descripcion,
+          cotizacion: d.tipoCotizacion,
+          pase: d.tipoPase,
+        }));
+        return ok({ cotizaciones }, `Cotizaciones BCRA del ${r.results.fecha}: ${cotizaciones.length} monedas.`);
       }
       const cod = moneda.toUpperCase();
       const params = new URLSearchParams();
@@ -126,12 +144,14 @@ export function registerTools(server: McpServer) {
       }
       const url = `${BCRA}/estadisticascambiarias/v1.0/Cotizaciones/${cod}${params.size ? "?" + params : ""}`;
       const r = await getJson<BcraResp<Cotizacion[]>>(url);
-      const serie = r.results.map((c) => ({
+      const cotizaciones = r.results.map((c) => ({
         fecha: c.fecha,
+        moneda: cod,
+        descripcion: c.detalle[0]?.descripcion,
         cotizacion: c.detalle[0]?.tipoCotizacion,
         pase: c.detalle[0]?.tipoPase,
       }));
-      return ok(serie, `${cod}: ${serie.length} cotizaciones (más reciente primero).`);
+      return ok({ cotizaciones }, `${cod}: ${cotizaciones.length} cotizaciones (más reciente primero).`);
     }),
   );
 
@@ -149,6 +169,7 @@ export function registerTools(server: McpServer) {
           .describe("Texto a buscar en la descripción (sin distinguir mayúsculas ni acentos). Si se omite, devuelve las 'Principales Variables'."),
         limite: z.number().int().min(1).max(100).default(25),
       },
+      outputSchema: S.salidaBuscarVariablesBcra,
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     safe(async ({ texto, limite }) => {
@@ -172,7 +193,7 @@ export function registerTools(server: McpServer) {
         ultimaFecha: v.ultFechaInformada,
         ultimoValor: v.ultValorInformado,
       }));
-      return ok(out, `${filtradas.length} variables encontradas (mostrando ${out.length}).`);
+      return ok({ total: filtradas.length, variables: out }, `${filtradas.length} variables encontradas (mostrando ${out.length}).`);
     }),
   );
 
@@ -195,6 +216,7 @@ export function registerTools(server: McpServer) {
           .default(30)
           .describe("Cantidad máxima de valores (los más recientes primero)."),
       },
+      outputSchema: S.salidaSerieVariableBcra,
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     safe(async ({ id, desde, hasta, limite }) => {
@@ -206,7 +228,7 @@ export function registerTools(server: McpServer) {
       );
       const detalle = r.results[0]?.detalle ?? [];
       if (!detalle.length) return fail(`La variable ${id} no tiene datos en el rango pedido.`);
-      return ok(detalle, `Variable ${id}: ${detalle.length} valores, último ${detalle[0].fecha} = ${detalle[0].valor}.`);
+      return ok({ id, valores: detalle }, `Variable ${id}: ${detalle.length} valores, último ${detalle[0].fecha} = ${detalle[0].valor}.`);
     }),
   );
 
@@ -224,6 +246,7 @@ export function registerTools(server: McpServer) {
           .default(false)
           .describe("Si es true, incluye los últimos 24 meses en lugar de solo el último período."),
       },
+      outputSchema: S.salidaConsultarDeudor,
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     safe(async ({ cuit, historico }) => {
@@ -248,7 +271,7 @@ export function registerTools(server: McpServer) {
 
       if (!deudas) {
         return ok(
-          { cuit: formatearCuit(id), deudas: [], chequesRechazados: cheques?.results ?? null },
+          { cuit: formatearCuit(id), denominacion: null, periodos: [], chequesRechazados: cheques?.results ?? null },
           `${formatearCuit(id)}: sin deudas informadas en la Central de Deudores.`,
         );
       }
@@ -283,7 +306,7 @@ export function registerTools(server: McpServer) {
         `${ult.entidades.length} entidades, monto total $${fmt(ult.montoTotal)}; ${detalleIrregular} ` +
         `Cheques rechazados: ${cheques ? "SÍ, ver detalle" : "no registra"}.`;
       return ok(
-        { denominacion: deudas.results.denominacion, cuit: formatearCuit(id), periodos, chequesRechazados: cheques?.results ?? null },
+        { cuit: formatearCuit(id), denominacion: deudas.results.denominacion, periodos, chequesRechazados: cheques?.results ?? null },
         resumen,
       );
     }),
@@ -300,6 +323,7 @@ export function registerTools(server: McpServer) {
         anio: z.number().int().min(2016).max(2100).optional().describe("Año (por defecto el actual)."),
         solo_proximos: z.boolean().default(false),
       },
+      outputSchema: S.salidaFeriados,
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     safe(async ({ anio, solo_proximos }) => {
@@ -310,12 +334,11 @@ export function registerTools(server: McpServer) {
       );
       const hoyStr = hoy();
       const out = solo_proximos ? lista.filter((f) => f.fecha >= hoyStr) : lista;
+      const proximo = lista.find((f) => f.fecha >= hoyStr)?.fecha ?? null;
       const resumen = out.length
-        ? `${out.length} feriados${solo_proximos ? " próximos" : ""} en ${year}. Próximo: ${
-            lista.find((f) => f.fecha >= hoyStr)?.fecha ?? "ninguno este año"
-          }.`
+        ? `${out.length} feriados${solo_proximos ? " próximos" : ""} en ${year}. Próximo: ${proximo ?? "ninguno este año"}.`
         : `No quedan feriados en ${year}.`;
-      return ok(out, resumen);
+      return ok({ anio: year, proximo, feriados: out }, resumen);
     }),
   );
 
@@ -333,6 +356,7 @@ export function registerTools(server: McpServer) {
         desde: mesISO.optional().describe("Mes inicial YYYY-MM."),
         hasta: mesISO.optional().describe("Mes final YYYY-MM."),
       },
+      outputSchema: S.salidaInflacion,
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     safe(async ({ desde, hasta }) => {
@@ -360,6 +384,7 @@ export function registerTools(server: McpServer) {
         desde: mesISO.describe("Mes en que está expresado el monto (YYYY-MM)."),
         hasta: mesISO.optional().describe("Mes destino (YYYY-MM). Por defecto el último mes publicado."),
       },
+      outputSchema: S.salidaAjustarPorInflacion,
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     safe(async ({ monto, desde, hasta }) => {

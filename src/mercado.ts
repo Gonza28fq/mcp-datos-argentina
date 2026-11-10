@@ -5,6 +5,7 @@ import { getJson } from "./http.js";
 import { fail, fechaISO, HORA, ok, safe, SOLO_LECTURA } from "./comun.js";
 import { rendimiento, tasaPara, tasaRealMensualPct, type BancoPlazoFijo } from "./plazofijo.js";
 import type { PuntoInflacion } from "./inflacion.js";
+import * as S from "./esquemas.js";
 
 const ARG_DATOS = "https://api.argentinadatos.com/v1/finanzas";
 
@@ -24,6 +25,7 @@ export function registerMercado(server: McpServer) {
         hasta: fechaISO.optional(),
         ultimos: z.number().int().min(1).max(2000).default(30).describe("Si no hay 'desde', cantidad de días hábiles más recientes."),
       },
+      outputSchema: S.salidaRiesgoPais,
       annotations: SOLO_LECTURA,
     },
     safe(async ({ desde, hasta, ultimos }) => {
@@ -76,6 +78,7 @@ export function registerMercado(server: McpServer) {
           .describe("true = tasas para clientes del banco; false = solo bancos que aceptan no clientes."),
         limite: z.number().int().min(1).max(50).default(10),
       },
+      outputSchema: S.salidaPlazosFijos,
       annotations: SOLO_LECTURA,
     },
     safe(async ({ dias, monto, cliente, limite }) => {
@@ -127,7 +130,14 @@ export function registerMercado(server: McpServer) {
           `rinde ${signo(mejor.tasaRealMensualPct)}% real por mes ` +
           `(${mejor.tasaRealMensualPct >= 0 ? "le gana a" : "pierde contra"} la inflación).`;
       }
-      return ok(filas, resumen + "\nNota: las tasas se actualizan con demora; confirmalas con el banco antes de invertir.");
+      const datos = {
+        dias,
+        entidadesConTasa: conTasa.length,
+        totalEntidades: bancos.length,
+        inflacionReferencia: ultInfl ? { mes: ultInfl.fecha.slice(0, 7), inflacionPct: ultInfl.valor } : null,
+        opciones: filas,
+      };
+      return ok(datos, resumen + "\nNota: las tasas se actualizan con demora; confirmalas con el banco antes de invertir.");
     }),
   );
 }
