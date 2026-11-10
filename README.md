@@ -1,5 +1,10 @@
 # mcp-datos-argentina 🇦🇷
 
+[![CI](https://github.com/Gonza28fq/mcp-datos-argentina/actions/workflows/ci.yml/badge.svg)](https://github.com/Gonza28fq/mcp-datos-argentina/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/mcp-datos-argentina)](https://www.npmjs.com/package/mcp-datos-argentina)
+[![MCP Registry](https://img.shields.io/badge/MCP_Registry-io.github.Gonza28fq%2Fmcp--datos--argentina-blue)](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.Gonza28fq/mcp-datos-argentina)
+[![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-green)](LICENSE)
+
 Servidor [MCP](https://modelcontextprotocol.io) que le da a Claude (o cualquier cliente MCP) acceso a **datos públicos de Argentina en tiempo real**: dólar, BCRA, Central de Deudores, inflación, feriados, direcciones y geografía (Georef) y miles de series oficiales del INDEC y ministerios.
 
 📖 **[Manual completo](docs/MANUAL.md)**: qué es MCP, cómo funciona el protocolo, instalación y referencia de cada tool.
