@@ -552,6 +552,17 @@ Devuelve valores de una o más series oficiales (ids de buscar_series), con tran
 
 > **Preguntale así:** Mostrame la inflación interanual del IPC nacional de los últimos 6 meses
 
+### Prompts (plantillas listas)
+
+En Claude Code se invocan como `/mcp__datos-argentina__<nombre>`; en Claude Desktop, desde el menú **+**.
+
+| Prompt | Qué hace | Argumentos |
+|---|---|---|
+| `informe_economico_del_dia` · Informe económico del día | Dólar y brechas, riesgo país, inflación, mejor plazo fijo y próximo feriado, en un solo informe. | — |
+| `analisis_crediticio` · Análisis crediticio de un CUIT | Situación en la Central de Deudores del BCRA en los últimos 24 meses, cheques rechazados y una calificación orientativa. | `cuit` |
+| `plazo_fijo_vs_inflacion` · Plazo fijo vs. inflación | Compara los mejores plazos fijos contra la inflación reciente y calcula el dólar de equilibrio. | `monto`, `dias` (opcional) |
+| `poder_adquisitivo` · Poder adquisitivo de un monto | Actualiza un monto de un mes pasado por inflación y lo compara contra el dólar. | `monto`, `desde` |
+
 <!-- REFERENCIA:FIN -->
 
 ## Límites y uso responsable

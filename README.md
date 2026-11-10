@@ -34,6 +34,17 @@ Servidor [MCP](https://modelcontextprotocol.io) que le da a Claude (o cualquier 
 
 Ninguna API requiere token. Las respuestas se cachean en memoria (2 min a 24 h según la fuente).
 
+## Prompts
+
+Plantillas listas que combinan varias tools. En Claude Code se invocan como `/mcp__datos-argentina__<nombre>`; en Claude Desktop, desde el menú **+**.
+
+| Prompt | Qué arma | Argumentos |
+|---|---|---|
+| `informe_economico_del_dia` | Dólar y brechas, riesgo país, inflación, mejor plazo fijo y próximo feriado | — |
+| `analisis_crediticio` | Central de Deudores de los últimos 24 meses, cheques rechazados y calificación orientativa | `cuit` |
+| `plazo_fijo_vs_inflacion` | Mejores plazos fijos, tasa real y dólar MEP de equilibrio | `monto`, `dias` (opcional) |
+| `poder_adquisitivo` | Un monto de un mes pasado actualizado por inflación y comparado con el dólar | `monto`, `desde` (YYYY-MM) |
+
 ## Instalación
 
 Requiere Node.js 20 o superior. Publicado en npm como [`mcp-datos-argentina`](https://www.npmjs.com/package/mcp-datos-argentina) y listado en el [registro oficial de MCP](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.Gonza28fq/mcp-datos-argentina) como `io.github.Gonza28fq/mcp-datos-argentina`.
@@ -110,7 +121,12 @@ src/
 - [x] Riesgo país y plazos fijos por banco (v0.3.0)
 - [x] Publicación en npm (`npx mcp-datos-argentina`)
 - [x] Listado en el registro oficial de MCP
+- [x] Prompts MCP (informe del día, análisis crediticio, plazo fijo vs. inflación, poder adquisitivo)
+- [ ] Resources (catálogos de variables BCRA, provincias, feriados)
+- [ ] Salida estructurada (`outputSchema`)
 - [ ] Transporte HTTP (Streamable HTTP) para uso remoto
+
+Historial de cambios en [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 

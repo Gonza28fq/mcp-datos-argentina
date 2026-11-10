@@ -60,6 +60,7 @@ function tipo(p) {
 const client = new Client({ name: "gen-manual", version: "0.0.0" });
 await client.connect(new StdioClientTransport({ command: "node", args: ["dist/index.js"], stderr: "ignore" }));
 const { tools } = await client.listTools();
+const { prompts } = await client.listPrompts();
 await client.close();
 
 const porNombre = new Map(tools.map((t) => [t.name, t]));
@@ -84,10 +85,17 @@ for (const [cat, nombres] of CATEGORIAS) {
     if (EJEMPLOS[n]) md += `\n> **Preguntale así:** ${EJEMPLOS[n]}\n`;
   }
 }
+md += "\n### Prompts (plantillas listas)\n\n";
+md += "En Claude Code se invocan como `/mcp__datos-argentina__<nombre>`; en Claude Desktop, desde el menú **+**.\n\n";
+md += "| Prompt | Qué hace | Argumentos |\n|---|---|---|\n";
+for (const p of prompts) {
+  const args = (p.arguments ?? []).map((a) => `\`${a.name}\`${a.required ? "" : " (opcional)"}`).join(", ") || "—";
+  md += `| \`${p.name}\` · ${celda(p.title)} | ${celda(p.description)} | ${args} |\n`;
+}
 md += `\n${FIN}`;
 
 const actual = readFileSync(MANUAL, "utf8");
 const i = actual.indexOf(INICIO), f = actual.indexOf(FIN);
 if (i < 0 || f < 0) throw new Error(`No encontré los marcadores de referencia en ${MANUAL}`);
 writeFileSync(MANUAL, actual.slice(0, i) + md + actual.slice(f + FIN.length));
-console.log(`${MANUAL}: referencia regenerada con ${tools.length} tools`);
+console.log(`${MANUAL}: referencia regenerada con ${tools.length} tools y ${prompts.length} prompts`);

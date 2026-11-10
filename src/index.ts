@@ -5,6 +5,7 @@ import { registerTools } from "./tools.js";
 import { registerGeoref } from "./georef.js";
 import { registerSeries } from "./series.js";
 import { registerMercado } from "./mercado.js";
+import { registerPrompts } from "./prompts.js";
 import { VERSION } from "./version.js";
 
 const server = new McpServer(
@@ -14,7 +15,8 @@ const server = new McpServer(
       "Datos públicos de Argentina en tiempo real: dólar (oficial, blue, MEP, CCL), riesgo país, plazos fijos por banco, cotizaciones y variables del BCRA, " +
       "Central de Deudores, inflación (IPC), feriados, normalización geográfica (Georef: direcciones, localidades, coordenadas) " +
       "y series de tiempo oficiales (INDEC y ministerios: salarios, EMAE, empleo, IPC por rubro, etc.). " +
-      "Para variables del BCRA buscá el id con buscar_variables_bcra; para series oficiales, con buscar_series.",
+      "Para variables del BCRA buscá el id con buscar_variables_bcra; para series oficiales, con buscar_series. " +
+      "Hay prompts listos: informe_economico_del_dia, analisis_crediticio, plazo_fijo_vs_inflacion y poder_adquisitivo.",
   },
 );
 
@@ -22,6 +24,7 @@ registerTools(server);
 registerGeoref(server);
 registerSeries(server);
 registerMercado(server);
+registerPrompts(server);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
