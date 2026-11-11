@@ -4,3 +4,11 @@ dist/
 .env
 mcp-publisher.exe
 .mcpregistry_*
+
+# Certificados de ARCA: nunca al repo
+*.key
+*.crt
+*.csr
+*.pem
+*.p12
+*.pfx
