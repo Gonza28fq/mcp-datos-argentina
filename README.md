@@ -100,11 +100,41 @@ npm run build
 claude mcp add datos-argentina -- node /ruta/a/mcp-datos-argentina/dist/index.js
 ```
 
+### Por HTTP (servidor remoto)
+
+Además de stdio, el servidor habla **Streamable HTTP** en `/mcp`, sin estado: sirve como conector remoto y escala detrás de un balanceador.
+
+```bash
+npx -y mcp-datos-argentina --http --port 3000     # http://127.0.0.1:3000/mcp
+claude mcp add --transport http datos-argentina http://127.0.0.1:3000/mcp
+```
+
+Con Docker:
+
+```bash
+docker build -t mcp-datos-argentina .
+docker run --rm -p 3000:3000 -e MCP_AUTH_TOKEN=un-token-largo mcp-datos-argentina
+claude mcp add --transport http datos-argentina http://localhost:3000/mcp --header "Authorization: Bearer un-token-largo"
+```
+
+| Variable / argumento | Por defecto | Para qué |
+|---|---|---|
+| `--http` o `MCP_TRANSPORT=http` | stdio | Usa el transporte HTTP |
+| `--port` o `PORT` | `3000` | Puerto |
+| `--host` o `HOST` | `127.0.0.1` (`0.0.0.0` en Docker) | Interfaz donde escucha |
+| `MCP_AUTH_TOKEN` | — | Si está, exige `Authorization: Bearer <token>` |
+| `MCP_ALLOWED_HOSTS` | `localhost` si escucha en localhost | Hostnames aceptados en el header `Host` (protección contra DNS rebinding). En un servidor público, poné tu dominio |
+| `MCP_ALLOWED_ORIGINS` | — | Orígenes de navegador permitidos (CORS). Los clientes que no son navegador no mandan `Origin` |
+
+`GET /health` responde `{"status":"ok"}` sin token, para balanceadores y Docker. Si lo exponés en internet, configurá siempre `MCP_AUTH_TOKEN` y `MCP_ALLOWED_HOSTS`.
+
 ## Desarrollo
 
 ```bash
-npm test           # tests unitarios (CUIT, cálculos de inflación)
+npm test           # tests unitarios y de integración (sin red)
 npm run smoke      # levanta el servidor y llama cada tool contra las APIs reales
+npm run smoke:http # lo mismo, por Streamable HTTP
+npm run start:http # servidor HTTP en http://127.0.0.1:3000/mcp
 npm run inspector  # MCP Inspector para probar a mano
 npm run docs       # regenera la referencia de tools en docs/MANUAL.md
 ```
@@ -113,8 +143,15 @@ Estructura:
 
 ```
 src/
-  index.ts      # arranque del servidor (stdio)
+  index.ts      # arranque: stdio o --http
+  servidor.ts   # arma el servidor con todas las tools, prompts y resources
+  transporte-http.ts  # Streamable HTTP sin estado: Host, Origin, token, /health
   tools.ts      # tools de BCRA, dólar, inflación y feriados
+  cheques.ts    # cheques denunciados
+  calculadoras.ts / calculadoras-tools.ts  # aguinaldo, cuotas vs. contado, crédito UVA
+  prompts.ts    # prompts MCP
+  recursos.ts   # resources MCP
+  esquemas.ts   # outputSchema de cada tool
   georef.ts     # tools de normalización geográfica
   series.ts     # tools de series de tiempo oficiales
   mercado.ts    # riesgo país y plazos fijos
@@ -145,7 +182,7 @@ src/
 - [x] Resources (catálogos de variables BCRA, situaciones, provincias, feriados)
 - [x] Salida estructurada (`outputSchema` en las 16 tools)
 - [x] Cheques denunciados y calculadoras (aguinaldo, cuotas vs. contado, crédito UVA)
-- [ ] Transporte HTTP (Streamable HTTP) para uso remoto
+- [x] Transporte HTTP (Streamable HTTP) para uso remoto, con imagen Docker
 
 Historial de cambios en [CHANGELOG.md](CHANGELOG.md).
 

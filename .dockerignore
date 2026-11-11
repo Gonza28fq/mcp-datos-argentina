@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.github
+docs
+scripts
+*.md
+*.exe
+*.key
+*.crt
+*.csr
+*.pem
+.env
+src/**/*.test.ts

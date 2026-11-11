@@ -1,12 +1,34 @@
-// Prueba de humo: levanta el servidor por stdio y llama cada tool contra las APIs reales.
-// Uso: npm run build && node scripts/smoke.mjs
+// Prueba de humo: levanta el servidor y llama cada tool contra las APIs reales.
+// Uso: npm run build && node scripts/smoke.mjs           (por stdio)
+//      npm run build && node scripts/smoke.mjs --http    (por Streamable HTTP)
 // Falla si una tool no declara outputSchema, si devuelve error donde no se espera,
 // o si su structuredContent no cumple el esquema (el cliente del SDK lo valida al llamar).
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { spawn } from "node:child_process";
 
+const porHttp = process.argv.includes("--http");
 const client = new Client({ name: "smoke", version: "0.0.0" });
-await client.connect(new StdioClientTransport({ command: "node", args: ["dist/index.js"] }));
+let servidorHttp;
+
+if (porHttp) {
+  const port = 39_000 + Math.floor(Math.random() * 1000);
+  servidorHttp = spawn("node", ["dist/index.js", "--http", "--port", String(port)], { stdio: ["ignore", "ignore", "inherit"] });
+  const base = `http://127.0.0.1:${port}`;
+  for (let i = 0; ; i++) {
+    try {
+      if ((await fetch(`${base}/health`)).ok) break;
+    } catch {}
+    if (i > 50) throw new Error("El servidor HTTP no arrancó");
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  await client.connect(new StreamableHTTPClientTransport(new URL(`${base}/mcp`)));
+  console.log(`Transporte: Streamable HTTP (${base}/mcp)`);
+} else {
+  await client.connect(new StdioClientTransport({ command: "node", args: ["dist/index.js"] }));
+  console.log("Transporte: stdio");
+}
 
 const { tools } = await client.listTools();
 console.log("Tools:", tools.map((t) => t.name).join(", "), "\n");
@@ -103,4 +125,5 @@ for (const { uri } of resources) {
 
 console.log(fallos ? `\n${fallos} caso(s) fallaron.` : `\nTodos los casos OK (${casos.length} tools, ${resources.length} resources).`);
 await client.close();
+servidorHttp?.kill();
 process.exit(fallos ? 1 : 0);

@@ -42,3 +42,29 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run smoke
+      - run: npm run smoke:http
+
+  docker:
+    # Construye la imagen, la levanta y verifica /health y un pedido MCP real por HTTP.
+    name: Imagen Docker
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t mcp-datos-argentina:ci .
+      - name: Levantar el contenedor y probarlo
+        run: |
+          set -euo pipefail
+          docker run -d --name mcp -p 3000:3000 mcp-datos-argentina:ci
+          for i in $(seq 1 30); do curl -fs http://localhost:3000/health && break; sleep 1; done
+          echo
+          curl -fs http://localhost:3000/health | grep -q '"status":"ok"'
+          respuesta="$(curl -fs http://localhost:3000/mcp \
+            -H 'Content-Type: application/json' \
+            -H 'Accept: application/json, text/event-stream' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"calcular_aguinaldo","arguments":{"mejor_sueldo":1000000,"anio":2026,"semestre":1}}}')"
+          echo "$respuesta"
+          echo "$respuesta" | grep -q '"aguinaldoBruto":500000'
+      - name: Logs del contenedor
+        if: always()
+        run: docker logs mcp || true

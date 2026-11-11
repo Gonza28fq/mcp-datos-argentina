@@ -5,6 +5,19 @@ y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+### Agregado
+- **Transporte Streamable HTTP** (`--http` o `MCP_TRANSPORT=http`) en `/mcp`, sin estado: cada pedido usa un servidor nuevo, así que escala horizontalmente. Incluye:
+  - Validación del header `Host` contra DNS rebinding (automática en localhost; `MCP_ALLOWED_HOSTS` para un dominio).
+  - Validación de `Origin` y CORS para navegadores (`MCP_ALLOWED_ORIGINS`).
+  - Token opcional (`MCP_AUTH_TOKEN`) con comparación en tiempo constante.
+  - `GET /health` para balanceadores, límite de 1 MB por pedido y cierre ordenado con SIGTERM.
+- **Imagen Docker** (`Dockerfile`, Node 22 Alpine, usuario sin privilegios, healthcheck).
+- `--version` imprime la versión.
+- `npm run smoke:http` corre el smoke contra las APIs reales por HTTP; la CI corre los dos transportes y además construye la imagen Docker y le hace un pedido MCP real.
+
+### Cambiado
+- La construcción del servidor se movió a `src/servidor.ts` (`crearServidor()`), compartida por stdio y HTTP.
+
 ## [0.5.0] - 2026-11-10
 
 ### Agregado
