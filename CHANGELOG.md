@@ -5,6 +5,10 @@ y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [1.0.0] - 2026-11-11
+
+Primera versión estable: 20 tools, 4 prompts, 5 resources, salida estructurada en todas las tools, transportes stdio y Streamable HTTP, imagen Docker y release automático a npm y al Registro MCP. A partir de acá, los cambios que rompan la API pública (nombres de tools, parámetros o campos de salida) solo se harán en una versión mayor.
+
 ### Agregado
 - **Transporte Streamable HTTP** (`--http` o `MCP_TRANSPORT=http`) en `/mcp`, sin estado: cada pedido usa un servidor nuevo, así que escala horizontalmente. Incluye:
   - Validación del header `Host` contra DNS rebinding (automática en localhost; `MCP_ALLOWED_HOSTS` para un dominio).
@@ -17,6 +21,7 @@ y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
 ### Cambiado
 - La construcción del servidor se movió a `src/servidor.ts` (`crearServidor()`), compartida por stdio y HTTP.
+- README y manual revisados para la 1.0: uso por HTTP y Docker, ejemplos de calculadoras y cheques, salida estructurada, límites de las calculadoras y solución de problemas de HTTP.
 
 ## [0.5.0] - 2026-11-10
 
@@ -85,7 +90,8 @@ Primera versión publicada automáticamente desde GitHub Actions.
   `consultar_deudor` (Central de Deudores, con validación de CUIT), `feriados`, `inflacion` y `ajustar_por_inflacion`.
 - Caché en memoria por fuente y transporte stdio.
 
-[Sin publicar]: https://github.com/Gonza28fq/mcp-datos-argentina/compare/v0.5.0...HEAD
+[Sin publicar]: https://github.com/Gonza28fq/mcp-datos-argentina/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Gonza28fq/mcp-datos-argentina/releases/tag/v1.0.0
 [0.5.0]: https://github.com/Gonza28fq/mcp-datos-argentina/releases/tag/v0.5.0
 [0.4.0]: https://github.com/Gonza28fq/mcp-datos-argentina/releases/tag/v0.4.0
 [0.3.1]: https://github.com/Gonza28fq/mcp-datos-argentina/releases/tag/v0.3.1

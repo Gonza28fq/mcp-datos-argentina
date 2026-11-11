@@ -5,11 +5,13 @@
 [![MCP Registry](https://img.shields.io/badge/MCP_Registry-io.github.Gonza28fq%2Fmcp--datos--argentina-blue)](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.Gonza28fq/mcp-datos-argentina)
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-green)](LICENSE)
 
-Servidor [MCP](https://modelcontextprotocol.io) que le da a Claude (o cualquier cliente MCP) acceso a **datos públicos de Argentina en tiempo real**: dólar, BCRA, Central de Deudores, inflación, feriados, direcciones y geografía (Georef) y miles de series oficiales del INDEC y ministerios.
+Servidor [MCP](https://modelcontextprotocol.io) que le da a Claude (o cualquier cliente MCP) acceso a **datos públicos de Argentina en tiempo real**: dólar, BCRA, Central de Deudores, cheques denunciados, riesgo país, plazos fijos, inflación, feriados, direcciones y geografía (Georef) y miles de series oficiales del INDEC y ministerios. Suma calculadoras (aguinaldo, cuotas vs. contado, crédito UVA) que usan esos datos.
+
+**20 tools · 4 prompts · 5 resources · salida estructurada · stdio y Streamable HTTP · Docker.** Ninguna fuente requiere registro ni token.
 
 📖 **[Manual completo](docs/MANUAL.md)**: qué es MCP, cómo funciona el protocolo, instalación y referencia de cada tool.
 
-> "¿A cuánto está el blue?" · "¿Cuánto son hoy $100.000 de enero 2023?" · "¿Cómo está el CUIT 30-54668997-9 en la Central de Deudores?" · "¿Cuándo es el próximo feriado?"
+> "¿A cuánto está el blue?" · "¿Cuánto son hoy $100.000 de enero 2023?" · "¿Cómo está el CUIT 30-54668997-9 en la Central de Deudores?" · "¿Me conviene pagar $900.000 de contado o 12 cuotas de $85.000?" · "¿Cuándo es el próximo feriado?"
 
 ## Tools
 
@@ -36,7 +38,7 @@ Servidor [MCP](https://modelcontextprotocol.io) que le da a Claude (o cualquier 
 | `buscar_series` | Busca entre las series oficiales (INDEC y ministerios): salarios, EMAE, empleo, IPC por rubro… | Series de Tiempo (datos.gob.ar) |
 | `consultar_series` | Valores, variación %, variación interanual y cambio de frecuencia de hasta 10 series | Series de Tiempo (datos.gob.ar) |
 
-Ninguna API requiere token. Las respuestas se cachean en memoria (2 min a 24 h según la fuente).
+Las respuestas se cachean en memoria (2 min a 24 h según la fuente) para no castigar las APIs públicas. Las calculadoras hacen la cuenta localmente y solo consultan la inflación y la UVA.
 
 ## Prompts
 
@@ -143,25 +145,30 @@ Estructura:
 
 ```
 src/
-  index.ts      # arranque: stdio o --http
-  servidor.ts   # arma el servidor con todas las tools, prompts y resources
-  transporte-http.ts  # Streamable HTTP sin estado: Host, Origin, token, /health
-  tools.ts      # tools de BCRA, dólar, inflación y feriados
-  cheques.ts    # cheques denunciados
-  calculadoras.ts / calculadoras-tools.ts  # aguinaldo, cuotas vs. contado, crédito UVA
-  prompts.ts    # prompts MCP
-  recursos.ts   # resources MCP
-  esquemas.ts   # outputSchema de cada tool
-  georef.ts     # tools de normalización geográfica
-  series.ts     # tools de series de tiempo oficiales
-  mercado.ts    # riesgo país y plazos fijos
-  plazofijo.ts  # selección de tasa por plazo/monto y cálculo de TEA y tasa real
-  ventana.ts    # workaround del bug de transformaciones de Series de Tiempo
-  comun.ts      # helpers compartidos
-  http.ts       # fetch con timeout + caché
-  cuit.ts       # validación de CUIT/CUIL
-  inflacion.ts  # inflación acumulada y ajuste de montos
+  index.ts               # arranque: stdio o --http
+  servidor.ts            # arma el servidor con todas las tools, prompts y resources
+  transporte-http.ts     # Streamable HTTP sin estado: Host, Origin, token, /health
+
+  tools.ts               # BCRA, dólar, Central de Deudores, inflación y feriados
+  mercado.ts             # riesgo país y plazos fijos
+  cheques.ts             # cheques denunciados
+  georef.ts              # normalización geográfica
+  series.ts              # series de tiempo oficiales
+  calculadoras-tools.ts  # tools de aguinaldo, cuotas vs. contado y crédito UVA
+  prompts.ts             # prompts MCP
+  recursos.ts            # resources MCP
+  esquemas.ts            # outputSchema de cada tool
+
+  calculadoras.ts        # matemática financiera (lógica pura, testeada sin red)
+  plazofijo.ts           # tasa por plazo/monto, TEA y tasa real
+  inflacion.ts           # inflación acumulada y ajuste de montos
+  ventana.ts             # workaround del bug de transformaciones de Series de Tiempo
+  cuit.ts                # validación de CUIT/CUIL
+  http.ts                # fetch con timeout + caché
+  comun.ts               # helpers compartidos
 ```
+
+Cada módulo con lógica tiene su `*.test.ts` al lado. La CI corre los tests en Node 20, 22 y 24, el smoke contra las APIs reales por los dos transportes y construye la imagen Docker. Al subir un tag `v*`, publica en npm (Trusted Publishing, con *provenance*) y en el Registro MCP.
 
 ## Notas
 
@@ -171,18 +178,16 @@ src/
 - **Bug conocido de Series de Tiempo:** al combinar `last`/`limit` con una transformación (variación, interanual), la API corre la ventana hacia atrás y omite los períodos más recientes (con la interanual, un año entero). `consultar_series` lo esquiva pidiendo con `start_date` (ver `src/ventana.ts`).
 - Georef no tiene alturas cargadas para muchas calles del interior: en esos casos `normalizar_direccion` devuelve las calles candidatas en lugar de coordenadas exactas.
 - Al agregar a frecuencia anual, la API omite el año en curso (incompleto).
+- Las calculadoras y los prompts son orientativos: no son asesoramiento financiero, legal ni contable.
 
 ## Roadmap
 
-- [ ] Padrón de ARCA (constancia de inscripción) — requiere certificado del Web Service
-- [x] Riesgo país y plazos fijos por banco (v0.3.0)
-- [x] Publicación en npm (`npx mcp-datos-argentina`)
-- [x] Listado en el registro oficial de MCP
-- [x] Prompts MCP (informe del día, análisis crediticio, plazo fijo vs. inflación, poder adquisitivo)
-- [x] Resources (catálogos de variables BCRA, situaciones, provincias, feriados)
-- [x] Salida estructurada (`outputSchema` en las 16 tools)
-- [x] Cheques denunciados y calculadoras (aguinaldo, cuotas vs. contado, crédito UVA)
-- [x] Transporte HTTP (Streamable HTTP) para uso remoto, con imagen Docker
+Próximo:
+
+- [ ] Padrón de ARCA (constancia de inscripción), opcional con certificado propio del usuario
+- [ ] Tests de contrato con respuestas grabadas, para detectar cambios en las APIs sin depender de la red
+
+Hecho en la 1.0: 20 tools, prompts, resources, salida estructurada, transporte HTTP con Docker, publicación en npm y en el Registro MCP con release automático.
 
 Historial de cambios en [CHANGELOG.md](CHANGELOG.md).
 

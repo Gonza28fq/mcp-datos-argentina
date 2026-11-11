@@ -2,7 +2,7 @@
 
 **Preguntale a tu IA por la Argentina, con datos oficiales.**
 
-`mcp-datos-argentina` es un servidor MCP: un programa chico que conectás a Claude (o a otro asistente compatible) para que consulte en tiempo real el BCRA, el dólar, la inflación, el riesgo país, los plazos fijos, los feriados, la normalización de direcciones de Georef y miles de series oficiales del INDEC. No necesita claves ni registros.
+`mcp-datos-argentina` es un servidor MCP: un programa chico que conectás a Claude (o a otro asistente compatible) para que consulte en tiempo real el BCRA, el dólar, la inflación, el riesgo país, los plazos fijos, los cheques denunciados, los feriados, la normalización de direcciones de Georef y miles de series oficiales del INDEC. También calcula aguinaldo, cuotas vs. contado y créditos UVA con esos datos. No necesita claves ni registros, y se puede usar instalado en tu computadora o como servidor remoto por HTTP.
 
 > **Vos:** ¿Conviene un plazo fijo de un millón a 30 días o pierdo contra la inflación?
 >
@@ -66,6 +66,10 @@ Esta sección es para quien quiera integrar el servidor por su cuenta o entender
 ### Transporte: stdio
 
 El cliente arranca el servidor como un proceso hijo (`node dist/index.js`) y se comunican por la entrada y salida estándar. Cada mensaje es un objeto JSON en **una sola línea**, terminado en salto de línea. Por eso el servidor nunca escribe nada más en stdout: sus logs van a stderr.
+
+### Transporte: Streamable HTTP
+
+Con `--http`, el servidor escucha en `http://127.0.0.1:3000/mcp` y cada mensaje JSON-RPC viaja en un `POST`. Funciona **sin estado**: no hay sesiones, cada pedido se atiende con un servidor nuevo y la respuesta vuelve como JSON en el mismo pedido. Así, varias copias del servidor pueden atender detrás de un balanceador. `GET /health` informa si está vivo. Ver [Por HTTP](#por-http-servidor-remoto) para la configuración.
 
 ### Formato: JSON-RPC 2.0
 
@@ -195,6 +199,34 @@ En Claude Desktop u otros clientes, usá `npx` como comando:
 > [!TIP]
 > En Windows, si Claude Desktop no encuentra `npx`, usá `"command": "cmd"` con `"args": ["/c", "npx", "-y", "mcp-datos-argentina"]`.
 
+### Por HTTP (servidor remoto)
+
+Para compartirlo en una red o usarlo como conector remoto, levantalo en modo HTTP y apuntá el cliente a la URL:
+
+```bash
+npx -y mcp-datos-argentina --http --port 3000
+claude mcp add --transport http datos-argentina http://127.0.0.1:3000/mcp
+```
+
+O con Docker, desde la carpeta del código:
+
+```bash
+docker build -t mcp-datos-argentina .
+docker run --rm -p 3000:3000 -e MCP_AUTH_TOKEN=un-token-largo mcp-datos-argentina
+claude mcp add --transport http datos-argentina http://localhost:3000/mcp --header "Authorization: Bearer un-token-largo"
+```
+
+| Configuración | Por defecto | Para qué |
+|---|---|---|
+| `--port` / `PORT` | `3000` | Puerto |
+| `--host` / `HOST` | `127.0.0.1` (`0.0.0.0` en Docker) | Interfaz donde escucha |
+| `MCP_AUTH_TOKEN` | — | Exige `Authorization: Bearer <token>` |
+| `MCP_ALLOWED_HOSTS` | `localhost` si escucha en localhost | Dominios aceptados en el header `Host` |
+| `MCP_ALLOWED_ORIGINS` | — | Páginas web que pueden llamarlo desde el navegador |
+
+> [!WARNING]
+> Si lo exponés en internet, configurá siempre `MCP_AUTH_TOKEN` y `MCP_ALLOWED_HOSTS` con tu dominio. Sin token, cualquiera que conozca la URL puede usarlo.
+
 ### Desde el código fuente
 
 Si querés modificarlo o fijar una versión exacta del código, necesitás además git:
@@ -321,14 +353,17 @@ No hace falta nombrar la tool: el modelo elige cuál usar. Cuanto más específi
 | **Inversiones** | ¿Qué banco paga más por un plazo fijo a 90 días? · Si pongo $500.000 a 30 días sin ser cliente, ¿cuánto gano? · ¿Cómo viene el riesgo país en el último mes? |
 | **Direcciones** | Normalizá "av rivadavia 1050, caba" y dame las coordenadas · ¿En qué municipio cae -29.41, -66.85? · Listá los municipios de La Rioja |
 | **Estadísticas** | ¿Cuánto es el salario mínimo vital y móvil? · Buscá la serie del EMAE y mostrame la variación interanual · Compará el IPC con el salario mínimo en los últimos 12 meses |
-| **Créditos y calendario** | ¿Cómo está el CUIT 30-54668997-9 en la Central de Deudores? · ¿Cuándo es el próximo feriado? |
+| **Créditos, cheques y calendario** | ¿Cómo está el CUIT 30-54668997-9 en la Central de Deudores? · ¿El cheque 12345678 del Banco Nación está denunciado? · ¿Cuándo es el próximo feriado? |
+| **Calculadoras** | ¿Cuánto me toca de aguinaldo si mi mejor sueldo fue $1.500.000 y entré en septiembre? · ¿Me conviene pagar $900.000 de contado o 12 cuotas de $85.000? · Simulá un crédito UVA de $60 millones a 20 años al 4,5% |
 
 ## Leer las respuestas
 
-Todas las tools devuelven un único bloque de texto con dos partes, separadas por una línea en blanco:
+Todas las tools devuelven un bloque de texto con dos partes, separadas por una línea en blanco:
 
 1. **Resumen en castellano**: una o dos líneas con lo importante, listas para que el modelo las use.
 2. **JSON completo**: todos los datos estructurados, para cálculos o gráficos posteriores.
+
+Además, los mismos datos llegan en `structuredContent`, validados contra el `outputSchema` que cada tool publica. Un programa puede leerlos directamente, sin parsear el texto (ver [Salida estructurada](#salida-estructurada)).
 
 | Dato | Formato |
 |---|---|
@@ -669,6 +704,8 @@ Todas las tools declaran `outputSchema` y devuelven, además del texto, los mism
 - **Direcciones del interior.** Georef no tiene numeración cargada para muchas calles fuera de los grandes centros urbanos. En esos casos la tool te ofrece las calles candidatas en lugar de coordenadas exactas.
 - **Frescura de los datos.** El servidor guarda respuestas en memoria entre 2 minutos (dólar) y 24 horas (feriados, direcciones). Si reiniciás la app, la caché se vacía.
 - **Agregados anuales.** Al pasar una serie a frecuencia anual, el año en curso no aparece hasta que termina.
+- **Calculadoras.** Son orientativas. El neto del aguinaldo descuenta solo los aportes del 17% (no ganancias ni otros conceptos del recibo). Cuotas vs. contado y crédito UVA dependen de la inflación supuesta, que por defecto es el promedio de los últimos meses y puede no repetirse. Cada banco tiene sus propias condiciones, seguros y gastos.
+- **Cheques.** Que un cheque no figure como denunciado no garantiza que tenga fondos.
 
 ## Solución de problemas
 
@@ -688,6 +725,15 @@ Dentro de un JSON la barra invertida se escribe doble (`C:\\ruta\\dist\\index.js
 <summary><b>"node" no se reconoce como comando</b></summary>
 
 Node no está en el PATH que ve la aplicación. Poné la ruta completa del ejecutable en `command`, por ejemplo `C:/Program Files/nodejs/node.exe`. Para encontrarla: `where node` en Windows o `which node` en macOS y Linux.
+</details>
+
+<details>
+<summary><b>Por HTTP responde 401, 403 o 405</b></summary>
+
+- **401**: el servidor tiene `MCP_AUTH_TOKEN` y el cliente no mandó `Authorization: Bearer <token>`, o mandó otro.
+- **403 "Host no permitido"**: entraste con un nombre que no está en `MCP_ALLOWED_HOSTS` (por ejemplo, la IP de la máquina en vez de `localhost`). Agregalo a la variable.
+- **403 "Origen no permitido"**: una página web intenta llamarlo desde el navegador. Agregá su origen a `MCP_ALLOWED_ORIGINS`.
+- **405**: el servidor es sin estado y solo acepta `POST` en `/mcp`; los clientes MCP actuales ya lo manejan.
 </details>
 
 <details>
