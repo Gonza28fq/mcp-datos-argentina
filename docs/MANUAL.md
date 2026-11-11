@@ -345,7 +345,7 @@ Cuando algo falla, la respuesta llega con `isError: true` y un mensaje que expli
 
 <!-- REFERENCIA:INICIO (generado por scripts/gen-manual.mjs, no editar a mano) -->
 
-_16 tools. Generado desde `tools/list`._
+_20 tools. Generado desde `tools/list`._
 
 ### Dólar y BCRA
 
@@ -447,7 +447,7 @@ Convierte un monto en pesos de un mes a pesos de otro mes usando el IPC (ej. '¿
 
 > **Preguntale así:** ¿Cuánto son hoy $100.000 de enero de 2023?
 
-### Créditos
+### Créditos y cheques
 
 #### `consultar_deudor` · Central de Deudores BCRA
 
@@ -459,6 +459,63 @@ Consulta la situación crediticia de un CUIT/CUIL en la Central de Deudores del 
 | `historico` | sí/no | `false` | Si es true, incluye los últimos 24 meses en lugar de solo el último período. |
 
 > **Preguntale así:** ¿Cómo está el CUIT 30-54668997-9 en la Central de Deudores?
+
+#### `consultar_cheque_denunciado` · ¿El cheque está denunciado?
+
+Verifica en el BCRA si un cheque fue denunciado como extraviado, robado o adulterado, a partir del banco emisor y el número de cheque. Útil antes de aceptar un cheque. El banco se puede indicar por nombre ('Nación', 'Galicia') o por código BCRA.
+
+| Parámetro | Tipo | Por defecto | Descripción |
+|---|---|---|---|
+| `entidad` **(obligatorio)** | texto | — | Banco emisor: nombre (ej. 'Nación', 'Santander') o código de entidad del BCRA (ej. '11'). |
+| `numero_cheque` **(obligatorio)** | entero (máx 9007199254740991) | — | Número del cheque, sin ceros a la izquierda. |
+
+> **Preguntale así:** ¿El cheque 12345678 del Banco Nación está denunciado?
+
+### Calculadoras
+
+#### `calcular_aguinaldo` · Calcular aguinaldo (SAC)
+
+Calcula el aguinaldo (sueldo anual complementario) de un semestre: 50% del mejor sueldo bruto mensual, proporcional a los días trabajados si hubo ingreso o egreso durante el semestre. Incluye un neto estimado (aportes del 17%) y la fecha de vencimiento.
+
+| Parámetro | Tipo | Por defecto | Descripción |
+|---|---|---|---|
+| `mejor_sueldo` **(obligatorio)** | número | — | Mayor remuneración mensual bruta del semestre, en pesos. |
+| `anio` | entero (mín 2000, máx 2100) | — | Año (por defecto el actual). |
+| `semestre` |  | — | 1 = enero-junio, 2 = julio-diciembre. Por defecto el semestre en curso. |
+| `fecha_ingreso` | texto (YYYY-MM-DD) | — | Si empezó a trabajar durante el semestre (YYYY-MM-DD). |
+| `fecha_egreso` | texto (YYYY-MM-DD) | — | Si dejó de trabajar durante el semestre (YYYY-MM-DD). |
+
+> **Preguntale así:** ¿Cuánto me toca de aguinaldo si mi mejor sueldo fue $1.500.000 y entré el 15 de septiembre?
+
+#### `cuotas_vs_contado` · ¿Cuotas o contado?
+
+Compara pagar en cuotas contra pagar de contado trayendo las cuotas a valor presente con la inflación esperada. Devuelve el valor presente de las cuotas, cuánto se ahorra o se pierde, y la tasa de interés implícita en las cuotas (mensual y anual). Por defecto usa como inflación esperada el promedio de los últimos 3 meses publicados.
+
+| Parámetro | Tipo | Por defecto | Descripción |
+|---|---|---|---|
+| `precio_contado` **(obligatorio)** | número | — | Precio pagando de contado (con el descuento, si lo hay). |
+| `cantidad_cuotas` **(obligatorio)** | entero (mín 1, máx 120) | — |  |
+| `monto_cuota` | número | — | Valor de cada cuota. Indicar esto o total_financiado. |
+| `total_financiado` | número | — | Total a pagar en cuotas. Indicar esto o monto_cuota. |
+| `inflacion_mensual_pct` | número (mín -10, máx 100) | — | Inflación mensual esperada en %. Por defecto, el promedio de los últimos 3 meses. |
+| `primera_cuota_hoy` | sí/no | `false` | true si la primera cuota se paga en el momento de la compra. |
+
+> **Preguntale así:** ¿Me conviene pagar $900.000 de contado o 12 cuotas de $85.000?
+
+#### `simular_credito_uva` · Simular crédito UVA
+
+Simula un crédito hipotecario o personal en UVAs (sistema francés): capital y cuota en UVAs, cuota inicial en pesos con el valor UVA de hoy (BCRA), ingreso mínimo según la relación cuota/ingreso y una proyección de la cuota y el saldo en pesos con una inflación supuesta (por defecto, el promedio de los últimos 6 meses).
+
+| Parámetro | Tipo | Por defecto | Descripción |
+|---|---|---|---|
+| `monto` **(obligatorio)** | número | — | Monto del préstamo en pesos. |
+| `plazo_meses` **(obligatorio)** | entero (mín 6, máx 480) | — | Plazo en meses (ej. 240 = 20 años). |
+| `tna_pct` **(obligatorio)** | número (mín 0, máx 100) | — | Tasa nominal anual sobre UVA, en % (ej. 4.5). |
+| `ingreso_mensual` | número | — | Ingreso neto mensual del grupo familiar, para verificar la relación cuota/ingreso. |
+| `relacion_cuota_ingreso_max_pct` | número (mín 5, máx 50) | `25` | Relación cuota/ingreso máxima que exige el banco, en %. |
+| `inflacion_mensual_pct` | número (mín -10, máx 100) | — | Inflación mensual supuesta para proyectar la UVA. Por defecto, el promedio de los últimos 6 meses. |
+
+> **Preguntale así:** Simulá un crédito UVA de $60 millones a 20 años al 4,5% con un ingreso de $2.500.000
 
 ### Calendario
 
@@ -570,6 +627,7 @@ Datos que se pueden adjuntar como contexto sin llamar una tool. En Claude Code s
 | URI | Qué contiene |
 |---|---|
 | `datos-argentina://bcra/situaciones` | Qué significa cada situación (1 a 6) que informa la Central de Deudores del BCRA. |
+| `datos-argentina://bcra/entidades-cheques` | Bancos con su código de entidad del BCRA, para consultar_cheque_denunciado. |
 | `datos-argentina://bcra/variables` | Las ~1600 variables monetarias del BCRA (API v4) con id, descripción, categoría, unidad y periodicidad. El id se usa en serie_variable_bcra. |
 | `datos-argentina://georef/provincias` | Las 24 jurisdicciones con su id INDEC y centroide (Georef). El id sirve como filtro en las tools de Georef. |
 | `datos-argentina://feriados/{anio}` | Calendario de feriados nacionales (inamovibles, trasladables y no laborables) de un año, desde 2016. |
@@ -596,6 +654,10 @@ Todas las tools declaran `outputSchema` y devuelven, además del texto, los mism
 | `consultar_series` | `series`, `datos` |
 | `riesgo_pais` | `ultimo`, `variacionDiariaPb`, `variacionPeriodoPb`, `variacionPeriodoPct`, `minimo`, `maximo`, `serie` |
 | `plazos_fijos` | `dias`, `entidadesConTasa`, `totalEntidades`, `inflacionReferencia`, `opciones` |
+| `consultar_cheque_denunciado` | `entidad`, `numeroCheque`, `denunciado`, `fechaProcesamiento`, `detalles` |
+| `calcular_aguinaldo` | `semestre`, `periodo`, `diasSemestre`, `diasTrabajados`, `proporcional`, `aguinaldoBruto`, `aportesEstimados`, `aguinaldoNetoEstimado`, `vencimiento` |
+| `cuotas_vs_contado` | `cuota`, `totalEnCuotas`, `recargoNominalPct`, `valorPresenteCuotas`, `diferenciaVsContado`, `conviene`, `tasaImplicitaMensualPct`, `tasaImplicitaAnualPct`, `tasaDescuentoMensualPct`, `inflacionUsada` |
+| `simular_credito_uva` | `valorUva`, `inflacionUsada`, `capitalUva`, `cuotaUva`, `cuotaInicialPesos`, `totalUva`, `interesesUva`, `ingresoMinimo`, `relacionCuotaIngresoPct`, `calificaPorIngreso`, `proyeccion` |
 
 <!-- REFERENCIA:FIN -->
 

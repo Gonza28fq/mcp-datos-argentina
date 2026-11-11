@@ -5,6 +5,16 @@ y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [0.5.0] - 2026-11-10
+
+### Agregado
+- `consultar_cheque_denunciado`: consulta en el BCRA si un cheque fue denunciado como extraviado, robado o adulterado. El banco se indica por nombre ("Nación", "Galicia", "ICBC", "Francés") o por código, y si el nombre es ambiguo devuelve las candidatas.
+- Resource `datos-argentina://bcra/entidades-cheques` con los códigos de entidad.
+- **Calculadoras**, con la lógica separada en `src/calculadoras.ts` y testeada sin red:
+  - `calcular_aguinaldo`: SAC del semestre (50% del mejor sueldo), proporcional por días si hubo ingreso o egreso, con neto estimado y fecha de vencimiento.
+  - `cuotas_vs_contado`: trae las cuotas a valor presente con la inflación esperada (por defecto, el promedio de los últimos 3 meses) y calcula el interés implícito de las cuotas.
+  - `simular_credito_uva`: sistema francés en UVAs con el valor UVA del día (BCRA), ingreso mínimo según la relación cuota/ingreso y proyección de cuota y saldo en pesos.
+
 ## [0.4.0] - 2026-11-10
 
 ### Agregado
@@ -62,7 +72,8 @@ Primera versión publicada automáticamente desde GitHub Actions.
   `consultar_deudor` (Central de Deudores, con validación de CUIT), `feriados`, `inflacion` y `ajustar_por_inflacion`.
 - Caché en memoria por fuente y transporte stdio.
 
-[Sin publicar]: https://github.com/Gonza28fq/mcp-datos-argentina/compare/v0.4.0...HEAD
+[Sin publicar]: https://github.com/Gonza28fq/mcp-datos-argentina/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Gonza28fq/mcp-datos-argentina/releases/tag/v0.5.0
 [0.4.0]: https://github.com/Gonza28fq/mcp-datos-argentina/releases/tag/v0.4.0
 [0.3.1]: https://github.com/Gonza28fq/mcp-datos-argentina/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Gonza28fq/mcp-datos-argentina/commit/7748c96

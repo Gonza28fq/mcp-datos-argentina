@@ -220,3 +220,58 @@ export const salidaConsultarSeries = z.object({
     .array(z.record(z.string(), z.union([z.string(), z.number(), z.null()])))
     .describe("Una fila por fecha: { fecha, <id de serie>: valor, ... }."),
 });
+
+// ---------- Cheques ----------
+
+export const salidaChequeDenunciado = z.object({
+  entidad: z.object({ codigo: z.number().int(), denominacion: z.string() }),
+  numeroCheque: z.number().int(),
+  denunciado: z.boolean(),
+  fechaProcesamiento: str.describe("Fecha de los datos del BCRA."),
+  detalles: z.array(z.object({ sucursal: num, numeroCuenta: num, causal: str })),
+});
+
+// ---------- Calculadoras ----------
+
+const inflacionUsada = z.object({ valorPct: z.number(), origen: z.string() });
+
+export const salidaAguinaldo = z.object({
+  semestre: z.string(),
+  periodo: z.object({ desde: z.string(), hasta: z.string() }),
+  diasSemestre: z.number().int(),
+  diasTrabajados: z.number().int(),
+  proporcional: z.boolean(),
+  aguinaldoBruto: z.number(),
+  aportesEstimados: z.number().describe("17%: jubilación 11%, PAMI 3%, obra social 3%."),
+  aguinaldoNetoEstimado: z.number(),
+  vencimiento: z.string().describe("YYYY-MM-DD"),
+});
+
+export const salidaCuotasVsContado = z.object({
+  cuota: z.number(),
+  totalEnCuotas: z.number(),
+  recargoNominalPct: z.number(),
+  valorPresenteCuotas: z.number(),
+  diferenciaVsContado: z.number().describe("Valor presente de las cuotas menos el precio de contado: negativo = conviene cuotas."),
+  conviene: z.enum(["cuotas", "contado", "indistinto"]),
+  tasaImplicitaMensualPct: z.number(),
+  tasaImplicitaAnualPct: z.number(),
+  tasaDescuentoMensualPct: z.number(),
+  inflacionUsada,
+});
+
+export const salidaCreditoUva = z.object({
+  valorUva: z.object({ fecha: z.string(), valor: z.number() }),
+  inflacionUsada,
+  capitalUva: z.number(),
+  cuotaUva: z.number(),
+  cuotaInicialPesos: z.number(),
+  totalUva: z.number(),
+  interesesUva: z.number(),
+  ingresoMinimo: z.number(),
+  relacionCuotaIngresoPct: z.number().nullable(),
+  calificaPorIngreso: z.boolean().nullable(),
+  proyeccion: z.array(
+    z.object({ mes: z.number().int(), valorUva: z.number(), cuotaPesos: z.number(), saldoUva: z.number(), saldoPesos: z.number() }),
+  ),
+});

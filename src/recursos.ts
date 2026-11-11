@@ -8,6 +8,7 @@ import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mc
 import { getJson } from "./http.js";
 import { HORA, hoy } from "./comun.js";
 import { SITUACIONES } from "./tools.js";
+import { entidadesCheques } from "./cheques.js";
 
 const BASE = "datos-argentina://";
 const JSON_MIME = "application/json";
@@ -46,6 +47,17 @@ export function registerRecursos(server: McpServer) {
         uri,
         Object.entries(SITUACIONES).map(([codigo, descripcion]) => ({ situacion: Number(codigo), descripcion })),
       ),
+  );
+
+  server.registerResource(
+    "entidades_cheques",
+    `${BASE}bcra/entidades-cheques`,
+    {
+      title: "Entidades bancarias (cheques)",
+      description: "Bancos con su código de entidad del BCRA, para consultar_cheque_denunciado.",
+      mimeType: JSON_MIME,
+    },
+    async (uri) => json(uri, await entidadesCheques()),
   );
 
   server.registerResource(

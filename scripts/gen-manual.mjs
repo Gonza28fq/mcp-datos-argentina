@@ -13,7 +13,8 @@ const CATEGORIAS = [
   ["Dólar y BCRA", ["cotizaciones_dolar", "cotizacion_bcra", "buscar_variables_bcra", "serie_variable_bcra"]],
   ["Mercado", ["riesgo_pais", "plazos_fijos"]],
   ["Inflación", ["inflacion", "ajustar_por_inflacion"]],
-  ["Créditos", ["consultar_deudor"]],
+  ["Créditos y cheques", ["consultar_deudor", "consultar_cheque_denunciado"]],
+  ["Calculadoras", ["calcular_aguinaldo", "cuotas_vs_contado", "simular_credito_uva"]],
   ["Calendario", ["feriados"]],
   ["Geografía (Georef)", ["normalizar_direccion", "normalizar_direcciones_lote", "buscar_lugar", "ubicacion_por_coordenadas"]],
   ["Series oficiales", ["buscar_series", "consultar_series"]],
@@ -36,6 +37,10 @@ const EJEMPLOS = {
   consultar_series: "Mostrame la inflación interanual del IPC nacional de los últimos 6 meses",
   riesgo_pais: "¿Cómo viene el riesgo país en el último mes?",
   plazos_fijos: "¿Qué banco paga más por $1.000.000 a 90 días?",
+  consultar_cheque_denunciado: "¿El cheque 12345678 del Banco Nación está denunciado?",
+  calcular_aguinaldo: "¿Cuánto me toca de aguinaldo si mi mejor sueldo fue $1.500.000 y entré el 15 de septiembre?",
+  cuotas_vs_contado: "¿Me conviene pagar $900.000 de contado o 12 cuotas de $85.000?",
+  simular_credito_uva: "Simulá un crédito UVA de $60 millones a 20 años al 4,5% con un ingreso de $2.500.000",
 };
 
 const celda = (s) => String(s ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");

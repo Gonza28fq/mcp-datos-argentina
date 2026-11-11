@@ -7,6 +7,8 @@ import { registerTools } from "./tools.js";
 import { registerGeoref } from "./georef.js";
 import { registerSeries } from "./series.js";
 import { registerMercado } from "./mercado.js";
+import { registerCheques } from "./cheques.js";
+import { registerCalculadoras } from "./calculadoras-tools.js";
 
 async function conectar() {
   const server = new McpServer({ name: "test", version: "0.0.0" });
@@ -14,6 +16,8 @@ async function conectar() {
   registerGeoref(server);
   registerSeries(server);
   registerMercado(server);
+  registerCheques(server);
+  registerCalculadoras(server);
   registerRecursos(server);
   const client = new Client({ name: "test", version: "0.0.0" });
   const [a, b] = InMemoryTransport.createLinkedPair();
@@ -30,6 +34,7 @@ describe("resources", () => {
       expect.arrayContaining([
         "datos-argentina://bcra/situaciones",
         "datos-argentina://bcra/variables",
+        "datos-argentina://bcra/entidades-cheques",
         "datos-argentina://georef/provincias",
       ]),
     );
@@ -73,7 +78,7 @@ describe("salida estructurada", () => {
   it("todas las tools declaran outputSchema de tipo objeto", async () => {
     const client = await conectar();
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(16);
+    expect(tools).toHaveLength(20);
     for (const t of tools) {
       expect(t.outputSchema, t.name).toBeDefined();
       expect(t.outputSchema?.type, t.name).toBe("object");

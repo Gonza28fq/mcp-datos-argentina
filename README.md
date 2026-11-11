@@ -20,11 +20,15 @@ Servidor [MCP](https://modelcontextprotocol.io) que le da a Claude (o cualquier 
 | `buscar_variables_bcra` | Busca entre ~1600 variables (reservas, BADLAR, TAMAR, CER, UVA, ICL…) | BCRA – Estadísticas monetarias v4 |
 | `serie_variable_bcra` | Serie histórica de una variable por id | BCRA – Estadísticas monetarias v4 |
 | `consultar_deudor` | Situación crediticia de un CUIT/CUIL + cheques rechazados (valida dígito verificador) | BCRA – Central de Deudores v1 |
+| `consultar_cheque_denunciado` | Si un cheque fue denunciado como extraviado o robado; el banco se indica por nombre o código | BCRA – Cheques v1 |
 | `feriados` | Feriados nacionales del año (o solo los próximos) | argentinadatos.com |
 | `inflacion` | IPC mensual y acumulada en un rango | argentinadatos.com |
 | `ajustar_por_inflacion` | Lleva un monto de un mes a otro por IPC (hacia adelante o atrás) | argentinadatos.com |
 | `riesgo_pais` | Último valor, variación diaria y del período, mínimo/máximo; historia desde 1999 | argentinadatos.com |
 | `plazos_fijos` | Ranking de tasas por banco/billetera para un plazo y monto: TNA, TEA, interés y tasa real vs. inflación | argentinadatos.com |
+| `calcular_aguinaldo` | Aguinaldo (SAC) del semestre, proporcional por ingreso o egreso, con neto estimado | Cálculo (Ley 23.041) |
+| `cuotas_vs_contado` | Valor presente de las cuotas contra la inflación esperada e interés implícito | Cálculo + IPC |
+| `simular_credito_uva` | Cuota en UVAs y en pesos, ingreso mínimo y proyección con inflación | Cálculo + UVA del BCRA + IPC |
 | `normalizar_direccion` | Normaliza y geolocaliza una dirección; si no hay altura, sugiere la calle | Georef (datos.gob.ar) |
 | `normalizar_direcciones_lote` | Hasta 500 direcciones en una llamada, con % de éxito | Georef (datos.gob.ar) |
 | `buscar_lugar` | Provincias, departamentos, municipios, localidades y calles con id INDEC | Georef (datos.gob.ar) |
@@ -53,12 +57,13 @@ Catálogos que se pueden adjuntar como contexto sin llamar una tool (en Claude C
 |---|---|
 | `datos-argentina://bcra/variables` | Las ~1600 variables monetarias del BCRA con id, unidad y periodicidad |
 | `datos-argentina://bcra/situaciones` | Qué significa cada situación (1 a 6) de la Central de Deudores |
+| `datos-argentina://bcra/entidades-cheques` | Bancos con su código de entidad del BCRA |
 | `datos-argentina://georef/provincias` | Las 24 jurisdicciones con id INDEC y centroide |
 | `datos-argentina://feriados/{anio}` | Feriados nacionales de un año (desde 2016, con autocompletado) |
 
 ## Salida estructurada
 
-Todas las tools declaran `outputSchema` y devuelven los datos también en `structuredContent`, validados contra ese esquema. Un programa puede consumirlos tipados sin parsear el texto. Los campos de cada tool están en el [manual](docs/MANUAL.md).
+Las 20 tools declaran `outputSchema` y devuelven los datos también en `structuredContent`, validados contra ese esquema. Un programa puede consumirlos tipados sin parsear el texto. Los campos de cada tool están en el [manual](docs/MANUAL.md).
 
 ## Instalación
 
@@ -139,6 +144,7 @@ src/
 - [x] Prompts MCP (informe del día, análisis crediticio, plazo fijo vs. inflación, poder adquisitivo)
 - [x] Resources (catálogos de variables BCRA, situaciones, provincias, feriados)
 - [x] Salida estructurada (`outputSchema` en las 16 tools)
+- [x] Cheques denunciados y calculadoras (aguinaldo, cuotas vs. contado, crédito UVA)
 - [ ] Transporte HTTP (Streamable HTTP) para uso remoto
 
 Historial de cambios en [CHANGELOG.md](CHANGELOG.md).

@@ -18,6 +18,7 @@ const ERROR_ESPERADO = new Set([
   'consultar_deudor {"cuit":"30-54668997-0"}',
   'ubicacion_por_coordenadas {"lat":40.4,"lon":-3.7}',
   'consultar_series {"ids":["NO_EXISTE_123"]}',
+  'consultar_cheque_denunciado {"entidad":"provincia","numero_cheque":1}',
 ]);
 
 const casos = [
@@ -57,6 +58,15 @@ const casos = [
   ["plazos_fijos", { cliente: false, limite: 3 }],
   ["plazos_fijos", { dias: 365, monto: 1000000, limite: 3 }],
   ["plazos_fijos", { dias: 47 }],
+  // Cheques
+  ["consultar_cheque_denunciado", { entidad: "nacion", numero_cheque: 12345678 }],
+  ["consultar_cheque_denunciado", { entidad: "provincia", numero_cheque: 1 }],
+  // Calculadoras
+  ["calcular_aguinaldo", { mejor_sueldo: 1500000 }],
+  ["calcular_aguinaldo", { mejor_sueldo: 1500000, anio: 2026, semestre: 2, fecha_ingreso: "2026-09-15" }],
+  ["cuotas_vs_contado", { precio_contado: 900000, cantidad_cuotas: 12, monto_cuota: 85000 }],
+  ["cuotas_vs_contado", { precio_contado: 900000, cantidad_cuotas: 6, total_financiado: 900000, inflacion_mensual_pct: 2.5 }],
+  ["simular_credito_uva", { monto: 60000000, plazo_meses: 240, tna_pct: 4.5, ingreso_mensual: 2500000 }],
 ];
 
 let fallos = sinEsquema.length;

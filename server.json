@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Gonza28fq/mcp-datos-argentina",
-  "description": "Datos públicos de Argentina: BCRA, dólar, inflación, riesgo país, plazos fijos, Georef y series",
+  "description": "Datos públicos de Argentina: BCRA, dólar, inflación, riesgo país, cheques, Georef y calculadoras",
   "repository": {
     "url": "https://github.com/Gonza28fq/mcp-datos-argentina",
     "source": "github"
