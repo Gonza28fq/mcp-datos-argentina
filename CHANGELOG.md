@@ -5,6 +5,13 @@ y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+### Agregado
+- Límite de pedidos por IP en el transporte HTTP (`MCP_RATE_LIMIT`, pedidos por minuto), con `429` y `Retry-After`. Con `MCP_TRUST_PROXY=1` toma la IP de `X-Forwarded-For`.
+- `render.yaml` para desplegar una instancia pública en Render. Si existe `RENDER_EXTERNAL_HOSTNAME`, ese dominio se acepta en el header `Host`.
+
+### Corregido
+- El healthcheck de la imagen Docker usaba siempre el puerto 3000 aunque se cambiara `PORT`.
+
 ## [1.0.0] - 2026-11-11
 
 Primera versión estable: 20 tools, 4 prompts, 5 resources, salida estructurada en todas las tools, transportes stdio y Streamable HTTP, imagen Docker y release automático a npm y al Registro MCP. A partir de acá, los cambios que rompan la API pública (nombres de tools, parámetros o campos de salida) solo se harán en una versión mayor.

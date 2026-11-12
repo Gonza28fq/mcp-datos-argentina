@@ -7,6 +7,7 @@
  * - Validación del header Host (protección contra DNS rebinding) cuando escucha en localhost o hay MCP_ALLOWED_HOSTS.
  * - Validación del header Origin: solo se aceptan navegadores de orígenes permitidos.
  * - Token opcional (MCP_AUTH_TOKEN): si está configurado, exige "Authorization: Bearer <token>".
+ * - Límite de pedidos por IP y por minuto (MCP_RATE_LIMIT), para una instancia pública sin token.
  */
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { timingSafeEqual } from "node:crypto";
@@ -22,6 +23,10 @@ export type OpcionesHttp = {
   /** Orígenes aceptados (ej. "https://miapp.com"). Los pedidos sin Origin (clientes no navegador) siempre pasan. */
   allowedOrigins: string[];
   authToken?: string;
+  /** Pedidos por minuto por IP en /mcp. 0 = sin límite. */
+  limitePorMinuto: number;
+  /** Detrás de un proxy (Render, Fly, nginx): tomar la IP del cliente de X-Forwarded-For. */
+  confiarEnProxy: boolean;
   crearServidor: () => McpServer;
   /** Para tests: no escribir logs. */
   silencioso?: boolean;
@@ -52,9 +57,16 @@ export function opcionesDesdeEntorno(argv: string[], env: NodeJS.ProcessEnv): Om
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error(`Puerto inválido: ${port}`);
 
   let allowedHosts = lista(env.MCP_ALLOWED_HOSTS);
+  // Render publica el dominio asignado en RENDER_EXTERNAL_HOSTNAME.
+  if (!allowedHosts.length && env.RENDER_EXTERNAL_HOSTNAME) allowedHosts = lista(env.RENDER_EXTERNAL_HOSTNAME);
   if (!allowedHosts.length && esHostLocal(host)) allowedHosts = LOCALES;
   const allowedOrigins = lista(env.MCP_ALLOWED_ORIGINS);
-  return { host, port, allowedHosts, allowedOrigins, authToken: env.MCP_AUTH_TOKEN || undefined };
+
+  const limitePorMinuto = Number(env.MCP_RATE_LIMIT ?? 0);
+  if (!Number.isInteger(limitePorMinuto) || limitePorMinuto < 0) throw new Error(`MCP_RATE_LIMIT inválido: ${env.MCP_RATE_LIMIT}`);
+  const confiarEnProxy = ["1", "true", "si", "sí"].includes((env.MCP_TRUST_PROXY ?? "").toLowerCase());
+
+  return { host, port, allowedHosts, allowedOrigins, authToken: env.MCP_AUTH_TOKEN || undefined, limitePorMinuto, confiarEnProxy };
 }
 
 function origenPermitido(origin: string, o: OpcionesHttp): boolean {
@@ -74,6 +86,35 @@ function tokenValido(header: string | undefined, token: string): boolean {
   const a = Buffer.from(m[1]);
   const b = Buffer.from(token);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/** IP del cliente. Con proxy, la primera de X-Forwarded-For (el cliente podría falsearla: es una protección de mejor esfuerzo). */
+export function ipCliente(req: IncomingMessage, confiarEnProxy: boolean): string {
+  if (confiarEnProxy) {
+    const xff = req.headers["x-forwarded-for"];
+    const primera = (Array.isArray(xff) ? xff[0] : xff)?.split(",")[0]?.trim();
+    if (primera) return primera;
+  }
+  return req.socket.remoteAddress ?? "desconocida";
+}
+
+/** Límite de ventana fija de un minuto por clave. Devuelve los segundos a esperar, o 0 si el pedido pasa. */
+export function crearLimitador(limite: number, ahora: () => number = Date.now) {
+  const ventanas = new Map<string, { inicio: number; cuenta: number }>();
+  return (clave: string): number => {
+    if (limite <= 0) return 0;
+    const t = ahora();
+    if (ventanas.size > 10_000) {
+      for (const [k, v] of ventanas) if (t - v.inicio >= 60_000) ventanas.delete(k);
+    }
+    let v = ventanas.get(clave);
+    if (!v || t - v.inicio >= 60_000) {
+      v = { inicio: t, cuenta: 0 };
+      ventanas.set(clave, v);
+    }
+    v.cuenta++;
+    return v.cuenta > limite ? Math.ceil((v.inicio + 60_000 - t) / 1000) : 0;
+  };
 }
 
 const errorJsonRpc = (res: ServerResponse, status: number, mensaje: string, codigo = -32000) => {
@@ -111,6 +152,8 @@ export function crearServidorHttp(o: OpcionesHttp): Server {
     if (!o.silencioso) console.error(msg);
   };
 
+  const limitar = crearLimitador(o.limitePorMinuto);
+
   return createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://x");
     const origin = req.headers.origin;
@@ -145,13 +188,20 @@ export function crearServidorHttp(o: OpcionesHttp): Server {
 
     if (url.pathname !== "/mcp") return errorJsonRpc(res, 404, "No encontrado. El endpoint MCP es /mcp.");
 
-    // 4. Token
+    // 4. Límite por IP (antes del token, así tampoco se puede probar tokens a lo bruto)
+    const espera = limitar(ipCliente(req, o.confiarEnProxy));
+    if (espera) {
+      res.setHeader("Retry-After", String(espera));
+      return errorJsonRpc(res, 429, `Demasiados pedidos: el límite es ${o.limitePorMinuto} por minuto. Reintentá en ${espera} s.`);
+    }
+
+    // 5. Token
     if (o.authToken && !tokenValido(req.headers.authorization, o.authToken)) {
       res.setHeader("WWW-Authenticate", 'Bearer realm="mcp-datos-argentina"');
       return errorJsonRpc(res, 401, "Falta el token o es inválido (Authorization: Bearer <token>).");
     }
 
-    // 5. Sin estado: no hay stream GET ni sesiones que cerrar.
+    // 6. Sin estado: no hay stream GET ni sesiones que cerrar.
     if (req.method !== "POST") {
       res.setHeader("Allow", "POST");
       return errorJsonRpc(res, 405, "Método no permitido: este servidor es sin estado y solo acepta POST.");
@@ -195,6 +245,7 @@ export async function iniciarHttp(o: OpcionesHttp): Promise<Server> {
     console.error(`mcp-datos-argentina ${VERSION} escuchando en http://${hostUrl}:${puerto}/mcp`);
     if (!o.allowedHosts.length) console.error("⚠ Sin validación de Host: configurá MCP_ALLOWED_HOSTS con tu dominio.");
     if (!esHostLocal(o.host) && !o.authToken) console.error("⚠ Expuesto fuera de localhost sin MCP_AUTH_TOKEN: cualquiera puede usarlo.");
+    if (!esHostLocal(o.host) && !o.authToken && !o.limitePorMinuto) console.error("⚠ Sin token ni MCP_RATE_LIMIT: no hay ningún límite de uso.");
   }
   return http;
 }

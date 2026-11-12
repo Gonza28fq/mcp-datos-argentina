@@ -127,8 +127,14 @@ claude mcp add --transport http datos-argentina http://localhost:3000/mcp --head
 | `MCP_AUTH_TOKEN` | — | Si está, exige `Authorization: Bearer <token>` |
 | `MCP_ALLOWED_HOSTS` | `localhost` si escucha en localhost | Hostnames aceptados en el header `Host` (protección contra DNS rebinding). En un servidor público, poné tu dominio |
 | `MCP_ALLOWED_ORIGINS` | — | Orígenes de navegador permitidos (CORS). Los clientes que no son navegador no mandan `Origin` |
+| `MCP_RATE_LIMIT` | `0` (sin límite) | Pedidos por minuto por IP en `/mcp`. Al pasarlo responde `429` con `Retry-After` |
+| `MCP_TRUST_PROXY` | — | `1` detrás de un proxy (Render, Fly, nginx): toma la IP del cliente de `X-Forwarded-For` |
 
-`GET /health` responde `{"status":"ok"}` sin token, para balanceadores y Docker. Si lo exponés en internet, configurá siempre `MCP_AUTH_TOKEN` y `MCP_ALLOWED_HOSTS`.
+`GET /health` responde `{"status":"ok"}` sin token, para balanceadores y Docker. Si lo exponés en internet, configurá `MCP_ALLOWED_HOSTS` y además `MCP_AUTH_TOKEN` o, para una instancia pública, `MCP_RATE_LIMIT`.
+
+#### Desplegar en Render
+
+El repo incluye [`render.yaml`](render.yaml): una instancia pública sin token, con 60 pedidos por minuto por IP. En Render, **New → Blueprint** y elegí el repositorio; el dominio `*.onrender.com` asignado se acepta solo en el header `Host`. En el plan gratuito el servicio se duerme tras 15 minutos sin uso y el primer pedido tarda unos 50 segundos en despertarlo.
 
 ## Desarrollo
 

@@ -1,0 +1,18 @@
+# Blueprint de Render: instancia pública del servidor por HTTP, sin token y con límite por IP.
+# En Render: New → Blueprint → elegir este repositorio. El dominio asignado (RENDER_EXTERNAL_HOSTNAME)
+# se acepta automáticamente en el header Host.
+services:
+  - type: web
+    name: mcp-datos-argentina
+    runtime: docker
+    plan: free
+    region: virginia
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: MCP_RATE_LIMIT
+        value: "60"
+      - key: MCP_TRUST_PROXY
+        value: "1"
